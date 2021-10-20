@@ -1,4 +1,4 @@
-Description: Sidecar HealthCheck + Fail Over
+Description: Sidecar Fail Open
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
