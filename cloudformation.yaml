@@ -13,6 +13,8 @@ Metadata:
         Parameters:
           - DBSecretLocation
           - DBAddress
+          - DBPort
+          - DBDatabase
       - Label:
           default: Record set configuration
         Parameters:
@@ -55,6 +57,14 @@ Parameters:
   DBAddress:
     Type: String
     Description: Enter the host of the database
+  DBPort:
+    Type: String
+    Description: The port that the database is listening in.
+    AllowedPattern: "\\d+"
+    Default: "3306"
+  DBDatabase:
+    Type: String
+    Description: The database on the DB that the healthcheck will connect to.
 
   Subnets:
     Type: AWS::EC2::Subnet::Id
@@ -187,6 +197,7 @@ Resources:
           SIDECARADDRESS: !Ref SidecarAddress
           CFSTACKNAME: !Ref AWS::StackName
           DBSECRET: !Ref DBSecretLocation
+          DBPORT: !Ref DBPort
           NRETRIES: !Sub "${NumberOfRetries}"
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
