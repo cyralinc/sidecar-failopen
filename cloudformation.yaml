@@ -9,23 +9,23 @@ Metadata:
           - SidecarNamePrefix
           - SidecarPort
       - Label:
-          default: DBDatabase Configuration
+          default: Repository Configuration
         Parameters:
-          - DBSecretLocation
-          - DBAddress
-          - DBPort
-          - DBDatabase
+          - RepoSecretLocation
+          - RepoAddress
+          - RepoPort
+          - RepoDatabase
       - Label:
           default: Record set configuration
         Parameters:
           - HostedZoneID
           - RecordSetName
-          - DBRecordSetType
+          - RepoRecordSetType
       - Label:
           default: Networking and Lambda configuration
         Parameters:
-          - Subnets
           - VPC
+          - Subnets
           - ImageUri
           - NumberOfRetries
       - Label:
@@ -43,62 +43,67 @@ Metadata:
 Parameters:
   SidecarAddress:
     Type: String
-    Description: Enter the Domain name of the sidecar.
+    Description: "Domain name of the sidecar load balancer."
   SidecarNamePrefix:
     Type: String
-    Description: Name prefix of the sidecar
+    Description: "Name prefix of the sidecar. This parameter is used to identify the elements of this stack and also the events created during runtime."
   SidecarPort:
     Type: String
-    Description: Port allocated on the sidecar for this DB
+    Description: "Port allocated on the sidecar for this repository."
 
-  DBSecretLocation:
+  RepoSecretsLocation:
     Type: String
-    Description: Location of the secret that contains credentials for the database.
-  DBAddress:
+    Description: "Location in AWS Secrets Manager that stores the secret containing the repository credentials."
+  RepoAddress:
     Type: String
-    Description: Enter the host of the database
-  DBPort:
+    Description: "CNAME or IP address used to access the repository."
+  RepoPort:
     Type: String
-    Description: The port that the database is listening in.
+    Description: "The port that the database is listening to."
     AllowedPattern: "\\d+"
-    Default: "3306"
-  DBDatabase:
+  RepoDatabase:
     Type: String
-    Description: The database on the DB that the healthcheck will connect to.
+    Description: "The database on the repository that the health check will connect to."
 
-  Subnets:
-    Type: AWS::EC2::Subnet::Id
-    Description: The subnet must be a private subnet with access to the internet and the sidecar that is to be monitored.
   VPC:
     Type: AWS::EC2::VPC::Id
-    Description: Select the VPC containing the Lambda subnet selected above.
+    Description: "The VPC the lambda will be attached to."
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: |
+      The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository.
+      These subnets must also support communication with CloudWatch and Secrets Manager.
   ImageUri:
     Type: String
-    Description: The image tag for the lambda
+    Description: "URI of a container image in the Amazon ECR registry that contains the health check lambda."
   NumberOfRetries:
     Type: String
-    Description: Number of retries on the lambda
+    Default: "3"
+    Description: "Number of failed consecutive health check attempts before the lambda sets the metric as unhealthy."
     AllowedPattern: "\\d+"
 
   HostedZoneID:
     Type: AWS::Route53::HostedZone::Id
-    Description: Hosted zone where the recordsets will be created
+    Description: "Hosted zone where the failover record sets will be created."
   RecordSetName:
     Type: String
-    Description: Name of the recordsets that will point to the db/sidecar
-  DBRecordSetType:
+    Description: "Name of the record sets that will reference the repository and sidecar."
+  RepoRecordSetType:
     Type: String
-    AllowedValues: [CNAME, A, AAAA, CAA, DS, MX, NAPTR, SPF, SRV, TXT]
+    AllowedValues: [CNAME, A, AAAA]
     Default: CNAME
-    Description: Type of the recordset for the DB, such as CNAME for FQDN and A for ipv4 address
+    Description: |
+      Type of the record set for the repository informed in 'RepoAddress'. If a domain name was provided, then
+      choose 'CNAME', if IPv4 choose 'A' and if IPv6 choose 'AAAA'.
   TTL:
     Type: String
     AllowedPattern: "\\d+"
     Default: "60"
+    Description: "Time-to-live for the record set."
 
   ConsecutiveFailuresForTrigger:
     Type: String
-    Description: Number of most recent datapoints to evaluate when determining alarm state
+    Description: "Number of consecutive failures that will trigger the alarm state that will perform the fail open"
     Default: "2"
 
 Resources:
@@ -118,11 +123,11 @@ Resources:
   SecondaryRecordSet:
     Type: AWS::Route53::RecordSet
     Properties:
-      Type: !Ref DBRecordSetType
+      Type: !Ref RepoRecordSetType
       Failover: SECONDARY
       HostedZoneId: !Ref HostedZoneID
       ResourceRecords:
-        - !Ref DBAddress
+        - !Ref RepoAddress
       Name: !Ref RecordSetName
       TTL: !Ref TTL
       SetIdentifier: "database"
@@ -162,7 +167,7 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                 Resource:
-                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DBSecretLocation}*'
+                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RepoSecretLocation}*'
 
               - Effect: Allow
                 Action:
@@ -193,14 +198,14 @@ Resources:
         ImageUri: !Ref ImageUri
       Environment:
         Variables:
-          SIDECARNAME: !Ref SidecarNamePrefix
-          SIDECARPORT: !Ref SidecarPort
-          SIDECARADDRESS: !Ref SidecarAddress
-          CFSTACKNAME: !Ref AWS::StackName
-          DBSECRET: !Ref DBSecretLocation
-          DBPORT: !Ref DBPort
-          DBDATABASE: !Ref DBDatabase
-          DBHOST: !Ref DBAddress
+          SIDECAR_NAME: !Ref SidecarNamePrefix
+          SIDECAR_PORT: !Ref SidecarPort
+          SIDECAR_ADDRESS: !Ref SidecarAddress
+          CF_STACK_NAME: !Ref AWS::StackName
+          REPO_SECRET: !Ref RepoSecretLocation
+          REPO_PORT: !Ref RepoPort
+          REPO_DATABASE: !Ref RepoDatabase
+          REPO_ADDRESS: !Ref RepoAddress
           NRETRIES: !Sub "${NumberOfRetries}"
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
@@ -236,20 +241,20 @@ Resources:
   Route53CloudWatchAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: Alarm for Route53 Health Check
+      AlarmDescription: "Alarm for Route53 Health Check"
       AlarmName: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
       MetricName: !Sub '${SidecarNamePrefix}: ${AWS::StackName} (Health Check for resource ${SidecarAddress})'
-      Namespace: Route53PrivateHealthCheck
+      Namespace: "Route53PrivateHealthCheck"
       ComparisonOperator: LessThanThreshold
       DatapointsToAlarm: !Ref ConsecutiveFailuresForTrigger
       EvaluationPeriods: !Ref ConsecutiveFailuresForTrigger
-      Period: "60"
-      Statistic: Minimum
-      Threshold: "1"
+      Period: 60
+      Statistic: "Minimum"
+      Threshold: 1
       Dimensions:
         - Name: !Sub ${SidecarNamePrefix} Health Check
           Value: !Sub ${SidecarNamePrefix} Health Check
-      TreatMissingData: breaching
+      TreatMissingData: "breaching"
 
   Route53HealthCheck:
     Type: AWS::Route53::HealthCheck
