@@ -76,8 +76,9 @@ Parameters:
     Type: String
     Description: The image tag for the lambda
   NumberOfRetries:
-    Type: Int
+    Type: String
     Description: Number of retries on the lambda
+    AllowedPattern: "\\d+"
 
   HostedZoneID:
     Type: AWS::Route53::HostedZone::Id
@@ -198,6 +199,8 @@ Resources:
           CFSTACKNAME: !Ref AWS::StackName
           DBSECRET: !Ref DBSecretLocation
           DBPORT: !Ref DBPort
+          DBDATABASE: !Ref DBDatabase
+          DBHOST: !Ref DBAddress
           NRETRIES: !Sub "${NumberOfRetries}"
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
@@ -211,7 +214,6 @@ Resources:
           - !Ref Subnets
 
   Events:
-    DependsOn: LambdaFunction
     Type: AWS::Events::Rule
     Properties:
       Description: Route53 Health Check
