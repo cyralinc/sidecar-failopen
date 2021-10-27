@@ -206,7 +206,7 @@ Resources:
           REPO_PORT: !Ref RepoPort
           REPO_DATABASE: !Ref RepoDatabase
           REPO_ADDRESS: !Ref RepoAddress
-          NRETRIES: !Sub "${NumberOfRetries}"
+          N_RETRIES: !Sub "${NumberOfRetries}"
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
       PackageType: Image
