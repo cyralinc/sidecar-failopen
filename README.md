@@ -1,4 +1,4 @@
-# CloudFormation template for sidecar DNS Fail-Open using
+# CloudFormation template for sidecar DNS Fail-Open
 
 This is a template that creates a DNS Fail-Open system, utilizing a Lambda function, CloudWatch alarms and Route53 health-checks to
 switch a DNS recordset between a sidecar and a repo, considering the current status of the sidecar.
