@@ -1,4 +1,8 @@
-# CloudFormation template for sidecar DNS Fail-Open
+# CloudFormation Template for Sidecar DNS Fail-Open
+
+## Introduction
+
+TODO: Review
 
 This is a template that creates a DNS Fail-Open system, utilizing a Lambda function, CloudWatch alarms and Route53 health-checks to
 switch a DNS recordset between a sidecar and a repo, considering the current status of the sidecar.
@@ -13,9 +17,36 @@ The lambda that is used is in [its own repo](https://github.com/cyralinc/health-
 The architecture is based on AWS’ own way of liveness probing resources in private subnets, which can be found in [this link](https://aws.amazon.com/blogs/networking-and-content-delivery/performing-route-53-health-checks-on-private-resources-in-a-vpc-with-aws-lambda-and-amazon-cloudwatch/).
 Their architecture emulates the possibilities for Route53 health checks with the lambda acting as a bridge between the health-check that can only monitor publicly named resources and the sidecar that is contained in a private subnet.
 
+# Limitations
+
+Some limitations apply to the operation of the fail open as follows:
+
+## DNS CNAME
+
+One CNAME must be used per Cyral Sidecar and per repository. It means that if two different 
+repositories are bound to the same Cyral Sidecar, then one CNAME must be created to represent
+each repository.
+
+TODO: create diagram to clarify this.
+
+## Credentials
+
+Only repositories that are bind to Cyral Sidecars and that accept native credentials are supported.
+This means that repositories that use SSO credentials exclusively are **not supported**. This 
+limitation is due to the fact that the same credentials used to check if the Cyral Sidecar is
+healthy are also used to check if the database is healthy, so native database credentials are 
+required.
 
 ## Deployment
 
+One health check must be deployed per CNAME (see [DNS CNAME](#DNS CNAME)).
+
+TODO: finish
+
+
+# Stack Deployment
+
+TODO: review
 ### Pre-Requisites
 - The hosted zone that will be used to create the RecordSets
 
