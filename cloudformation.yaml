@@ -1,4 +1,4 @@
-Description: Sidecar Fail Open
+Description: Cyral Sidecar Fail Open
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -53,7 +53,7 @@ Parameters:
 
   RepoSecretsLocation:
     Type: String
-    Description: "Location in AWS Secrets Manager that stores the secret containing the repository credentials."
+    Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."
   RepoAddress:
     Type: String
     Description: "CNAME or IP address used to access the repository."
@@ -69,7 +69,7 @@ Parameters:
     Type: AWS::EC2::VPC::Id
     Description: "The VPC the lambda will be attached to."
   Subnets:
-    Type: List<AWS::EC2::Subnet::Id>
+    Type: AWS::EC2::Subnet::Id
     Description: |
       The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository.
       These subnets must also support communication with CloudWatch and Secrets Manager.
