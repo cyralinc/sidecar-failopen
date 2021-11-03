@@ -1,4 +1,4 @@
-Description: Sidecar Fail Open
+Description: Cyral Sidecar Fail Open
 Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
@@ -32,13 +32,6 @@ Metadata:
           default: Trigger configuration
         Parameters:
           - ConsecutiveFailuresForTrigger
-    ParameterLabels:
-      SidecarAddress:
-        default: Domain Name of the sidecar
-      Subnets:
-        default: Lambda Subnets
-      VPC:
-        default: Lambda VPC
 
 Parameters:
   SidecarAddress:
@@ -53,7 +46,7 @@ Parameters:
 
   RepoSecretsLocation:
     Type: String
-    Description: "Location in AWS Secrets Manager that stores the secret containing the repository credentials."
+    Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."
   RepoAddress:
     Type: String
     Description: "CNAME or IP address used to access the repository."
