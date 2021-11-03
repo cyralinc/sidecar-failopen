@@ -11,7 +11,7 @@ Metadata:
       - Label:
           default: Repository Configuration
         Parameters:
-          - RepoSecretLocation
+          - RepoSecretsLocation
           - RepoAddress
           - RepoPort
           - RepoDatabase
@@ -167,7 +167,7 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                 Resource:
-                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RepoSecretLocation}*'
+                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RepoSecretsLocation}*'
 
               - Effect: Allow
                 Action:
@@ -202,7 +202,7 @@ Resources:
           SIDECAR_PORT: !Ref SidecarPort
           SIDECAR_ADDRESS: !Ref SidecarAddress
           CF_STACK_NAME: !Ref AWS::StackName
-          REPO_SECRET: !Ref RepoSecretLocation
+          REPO_SECRET: !Ref RepoSecretsLocation
           REPO_PORT: !Ref RepoPort
           REPO_DATABASE: !Ref RepoDatabase
           REPO_ADDRESS: !Ref RepoAddress
