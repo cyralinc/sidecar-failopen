@@ -48,43 +48,35 @@ required.
 
 ## Deployment
 
-One health check must be deployed [per CNAME](#(One CNAME per Cyral Sidecar per repository)), thus
+One health check must be deployed [per CNAME](#dns-cname), thus
 one lambda will be deployed for each pair Sidecar CNAME + Repository CNAME.
 
 
 # Stack Deployment
 
-TODO: review
-### Pre-Requisites
-- The hosted zone that will be used to create the RecordSets
+The stack can be deployed to CloudFormation via AWS Console or AWS CLI. All the necessary parameters
+and detailed information on each of them are in the `Parameters` section of the 
+[CloudFormation Template](./cft_sidecar_failopen.yaml). Before you deploy, read the entire 
+[Deployment Pre-Requisites](#deployment-pre-prequisites) section and make sure to have all of them
+ready before you give it a go.
 
-- A subnet for the lambda function with access to CloudWatch and SecretsManager.
+## Deployment Pre-Requisites
 
-- An ECR to store the lambda function that needs to be either public or in the same region as the lambda.
+- The sidecar load balancer DNS name (output variable `SidecarLoadBalancerDNS` from CFT sidecar).
 
-### Configuration
+- The hosted zone that will be used to create the record sets.
 
-The template asks for sidecar configuration, such as its FQDN and the port that will be checked.
+- A list of subnets with access to the sidecar, the repository, AWS CloudWatch and AWS SecretsManager.
+These subnets are the ones where the lambda will be deployed to.
 
-The DB configuration is based on environment variables and asks for the username, password and database for the native credentials on the repo. These values can be changed to be retrieved from secrets, which would be an improvement if necessary.
+- Database secrets stored in AWS Secrets Manager in the format:
 
-The lambda configuration needs its VPC and subnets. Keep in mind that the subnet/VPC needs to be the in the same VPC as the sidecar, and the VPC needs to attend to the second pre-requisite of having access to outbound internet.
+```json
+{
+  "username": "",
+  "password": ""
+}
+```
 
-| Variable                      | Description                                                                                                                                                                                             |
-| ---                           | ---                                                                                                                                                                                                     |
-| SidecarAddress                | Domain name of the sidecar load balancer.                                                                                                                                                               |
-| SidecarNamePrefix             | Name prefix of the sidecar. This parameter is used to identify the elements of this stack and also the events created during runtime.                                                                   |
-| SidecarPort                   | Port allocated on the sidecar for this repository.                                                                                                                                                      |
-| RepoSecretsLocation           | Location in AWS Secrets Manager that stores the secret containing the repository credentials. The secret must be in the same region as the lambda function.                                             |
-| RepoAddress                   | CNAME or IP address used to access the repository.                                                                                                                                                      |
-| RepoPort                      | The port that the repository is listening on                                                                                                                                                            |
-| RepoDatabase                  | The database on the repository that the healthcheck will connect to.                                                                                                                                    |
-| VPC                           | The VPC the lambda will be attached to.                                                                                                                                                                 |
-| Subnets                       | The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository. These subnets must also support communication with `CloudWatch` and `SecretsManager` |
-| ImageUri                      | URI of a container image in the Amazon ECR registry that contains the health check lambda.                                                                                                              |
-| NumberOfRetries               | Number of failed consecutive health check attempts before the lambda sets the metric as unhealthy.                                                                                                      |
-| ConsecutiveFailuresForTrigger | Number of times the healthcheck must fail in a row to trigger the alarm and the failover. This will increase the total time the sidecar needs to be down before the fail over triggers.                 |
-| HostedZoneID                  | Hosted zone where the failover record sets will be created.                                                                                                                                             |
-| RecordSetName                 | Name of the record sets that will reference the repository and sidecar.                                                                                                                                 |
-| RepoRecordSetType             | Type of the record set for the repository informed in 'RepoAddress'. If a domain name was provided, then choose 'CNAME', if IPv4 choose 'A' and if IPv6 choose 'AAAA'.                                  |
-| TTL                           | Time-to-live for the record set (in seconds).                                                                                                                                                           |
+- The database name to which the health check commands will be executed against.
+
