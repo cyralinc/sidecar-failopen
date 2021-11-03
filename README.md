@@ -1,21 +1,28 @@
-# CloudFormation Template for Sidecar DNS Fail-Open
+# CloudFormation Template for Cyral Sidecar DNS Fail Open for AWS
 
 ## Introduction
 
-TODO: Review
+This repository contains the CloudFormation template that deploys the Cyral Sidecar Fail Open feature.
+This feature provides automatic fail open/close to a Cyral Sidecar and its respectives target databases,
+allowing customers to keep existing databases reachable even when Cyral Sidecar experience transient
+failures.
 
-This is a template that creates a DNS Fail-Open system, utilizing a Lambda function, CloudWatch alarms and Route53 health-checks to
-switch a DNS recordset between a sidecar and a repo, considering the current status of the sidecar.
+![Cyral Sidecar Fail Open - Overview](./img/fail_open_overview.png)
 
-The overrall design is based on an event that triggers on a specific interval, which performs the healthcheck and activates
-an alarm in case the sidecar is failing. The architecture is described in the chart below:
+The Cyral Sidecar Fail Open for AWS is built on top of CloudWatch, Lambda and Route53. The CloudFormation 
+template contained here deploys the whole infrastructure and will provide the fail open feature out of
+the box.
 
-![Architectural Chart](./img/chart.png)
+The overrall design is based on an event that triggers on a specific interval and perform health checks.
+In case health checks fail, an alarm will be raised which will then trigger the change in the DNS record.
+The architecture is based on AWS' own way of liveness probing resources in private subnets, which can be 
+found [here](https://aws.amazon.com/blogs/networking-and-content-delivery/performing-route-53-health-checks-on-private-resources-in-a-vpc-with-aws-lambda-and-amazon-cloudwatch/).
+Our architecture is described in the image below:
 
-The lambda that is used is in [its own repo](https://github.com/cyralinc/health-check-aws).
+![Cyral Sidecar Fail Open for AWS - Architecture](./img/fail_open_aws.png)
 
-The architecture is based on AWS’ own way of liveness probing resources in private subnets, which can be found in [this link](https://aws.amazon.com/blogs/networking-and-content-delivery/performing-route-53-health-checks-on-private-resources-in-a-vpc-with-aws-lambda-and-amazon-cloudwatch/).
-Their architecture emulates the possibilities for Route53 health checks with the lambda acting as a bridge between the health-check that can only monitor publicly named resources and the sidecar that is contained in a private subnet.
+
+The lambda function lives in [its own repo](https://github.com/cyralinc/health-check-aws).
 
 # Limitations
 
@@ -27,7 +34,7 @@ One CNAME must be used per Cyral Sidecar and per repository. It means that if tw
 repositories are bound to the same Cyral Sidecar, then one CNAME must be created to represent
 each repository.
 
-TODO: create diagram to clarify this.
+![One CNAME per Cyral Sidecar per repository](./img/fail_open_cname_conf.png)
 
 ## Credentials
 
