@@ -32,7 +32,9 @@ Some limitations apply to the operation of the fail open as follows:
 
 One CNAME must be used per Cyral Sidecar and per repository. It means that if two different 
 repositories are bound to the same Cyral Sidecar, then one CNAME must be created to represent
-each repository.
+each repository. This will allow separate health checks as Cyral Sidecar is designed as a
+modular architecture and support for different databases are completely independent at
+Sidecar level.
 
 ![One CNAME per Cyral Sidecar per repository](./img/fail_open_cname_conf.png)
 
@@ -46,9 +48,8 @@ required.
 
 ## Deployment
 
-One health check must be deployed per CNAME (see [DNS CNAME](#DNS CNAME)).
-
-TODO: finish
+One health check must be deployed [per CNAME](#(One CNAME per Cyral Sidecar per repository)), thus
+one lambda will be deployed for each pair Sidecar CNAME + Repository CNAME.
 
 
 # Stack Deployment
