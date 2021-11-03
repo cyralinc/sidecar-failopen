@@ -3,8 +3,8 @@
 ## Introduction
 
 This repository contains the CloudFormation template that deploys the Cyral Sidecar Fail Open feature.
-This feature provides automatic fail open/close to a Cyral Sidecar and its respectives target databases,
-allowing customers to keep existing databases reachable even when Cyral Sidecar experience transient
+This feature provides automatic fail open/close to a Cyral Sidecar and its respectives target repositories,
+allowing customers to keep existing databases reachable even when Cyral Sidecar experiences transient
 failures.
 
 ![Cyral Sidecar Fail Open - Overview](./img/fail_open_overview.png)
@@ -45,6 +45,15 @@ This means that repositories that use SSO credentials exclusively are **not supp
 limitation is due to the fact that the same credentials used to check if the Cyral Sidecar is
 healthy are also used to check if the database is healthy, so native database credentials are 
 required.
+
+## Port Definition
+
+To allow client applications to restore database connectivity after a fail open event, the port
+allocated in the sidecar for the repository must be the same as the database port. For example, 
+If your MySQL instance is listening on port `3306`, then you need to make this repository 
+available in the sidecar on port `3306` as well. This parity will guarantee that client 
+applications that refers to `finance.db.acme.com` on port `3306` will still be able to connect
+if the CNAME moves from `sidecar.db.acme.com` to `mysql-01.db.acme.com` and vice-versa.
 
 ## Deployment
 
