@@ -32,13 +32,6 @@ Metadata:
           default: Trigger configuration
         Parameters:
           - ConsecutiveFailuresForTrigger
-    ParameterLabels:
-      SidecarAddress:
-        default: Domain Name of the sidecar
-      Subnets:
-        default: Lambda Subnets
-      VPC:
-        default: Lambda VPC
 
 Parameters:
   SidecarAddress:
