@@ -28,6 +28,7 @@ Metadata:
           - Subnets
           - ImageUri
           - NumberOfRetries
+          - LogLevel
       - Label:
           default: Trigger configuration
         Parameters:
@@ -78,6 +79,11 @@ Parameters:
     Type: String
     Description: "Number of consecutive failures that will trigger the alarm state that will perform the fail open"
     Default: "2"
+  LogLevel:
+    Type: String
+    AllowedValues: [DEBUG, INFO, WARNING, ERROR, FATAL]
+    Default: INFO
+    Description: Level of the logging of the lambda function.
 
   HostedZoneID:
     Type: AWS::Route53::HostedZone::Id
@@ -200,6 +206,7 @@ Resources:
           REPO_DATABASE: !Ref RepoDatabase
           REPO_ADDRESS: !Ref RepoAddress
           N_RETRIES: !Sub "${NumberOfRetries}"
+          LOG_LEVEL: !Ref LogLevel
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
       PackageType: Image
