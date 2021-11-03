@@ -76,7 +76,10 @@ ready before you give it a go.
 - The hosted zone that will be used to create the record sets.
 
 - A list of subnets with access to the sidecar, the repository, AWS CloudWatch and AWS SecretsManager.
-These subnets are the ones where the lambda will be deployed to.
+These subnets are the ones where the lambda will be deployed to. One way to configure access to 
+CloudWatch and SecretsManager from Labmda is to [follow these steps](https://aws.amazon.com/premiumsupport/knowledge-center/internet-access-lambda-function/) 
+up to item `Verify that your network ACL allows outbound requests from your Lambda function, and inbound traffic as needed`
+and attach the lambda to the created subnets.
 
 - Database secrets stored in AWS Secrets Manager in the format:
 
