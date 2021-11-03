@@ -10,7 +10,7 @@ an alarm in case the sidecar is failing. The architecture is described in the ch
 
 The lambda that is used is in [its own repo](https://github.com/cyralinc/health-check-aws).
 
-The architecture is based on AWS’ own way of liveness probing resources in private subnets, which can be found in this link.
+The architecture is based on AWS’ own way of liveness probing resources in private subnets, which can be found in [this link](https://aws.amazon.com/blogs/networking-and-content-delivery/performing-route-53-health-checks-on-private-resources-in-a-vpc-with-aws-lambda-and-amazon-cloudwatch/).
 Their architecture emulates the possibilities for Route53 health checks with the lambda acting as a bridge between the health-check that can only monitor publicly named resources and the sidecar that is contained in a private subnet.
 
 
