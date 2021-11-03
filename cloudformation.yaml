@@ -62,7 +62,7 @@ Parameters:
     Type: AWS::EC2::VPC::Id
     Description: "The VPC the lambda will be attached to."
   Subnets:
-    Type: AWS::EC2::Subnet::Id
+    Type: List<AWS::EC2::Subnet::Id>
     Description: |
       The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository.
       These subnets must also support communication with CloudWatch and Secrets Manager.
