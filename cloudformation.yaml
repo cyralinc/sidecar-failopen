@@ -1,0 +1,270 @@
+Description: Cyral Sidecar Fail Open
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Sidecar information
+        Parameters:
+          - SidecarAddress
+          - SidecarNamePrefix
+          - SidecarPort
+      - Label:
+          default: Repository Configuration
+        Parameters:
+          - RepoSecretsLocation
+          - RepoAddress
+          - RepoPort
+          - RepoDatabase
+      - Label:
+          default: Record set configuration
+        Parameters:
+          - HostedZoneID
+          - RecordSetName
+          - RepoRecordSetType
+      - Label:
+          default: Networking and Lambda configuration
+        Parameters:
+          - VPC
+          - Subnets
+          - ImageUri
+          - NumberOfRetries
+          - LogLevel
+      - Label:
+          default: Trigger configuration
+        Parameters:
+          - ConsecutiveFailuresForTrigger
+
+Parameters:
+  SidecarAddress:
+    Type: String
+    Description: "Domain name of the sidecar load balancer."
+  SidecarNamePrefix:
+    Type: String
+    Description: "Name prefix of the sidecar. This parameter is used to identify the elements of this stack and also the events created during runtime."
+  SidecarPort:
+    Type: String
+    Description: "Port allocated on the sidecar for this repository."
+
+  RepoSecretsLocation:
+    Type: String
+    Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."
+  RepoAddress:
+    Type: String
+    Description: "CNAME or IP address used to access the repository."
+  RepoPort:
+    Type: String
+    Description: "The port that the repository is listening on."
+    AllowedPattern: "\\d+"
+  RepoDatabase:
+    Type: String
+    Description: "The database on the repository that the health check will connect to."
+
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: "The VPC the lambda will be attached to."
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: |
+      The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository.
+      These subnets must also support communication with CloudWatch and Secrets Manager.
+  ImageUri:
+    Type: String
+    Description: "URI of a container image in the Amazon ECR registry that contains the health check lambda."
+  NumberOfRetries:
+    Type: String
+    Default: "3"
+    Description: "Number of failed consecutive health check attempts before the lambda sets the metric as unhealthy."
+    AllowedPattern: "\\d+"
+  ConsecutiveFailuresForTrigger:
+    Type: String
+    Description: "Number of consecutive failures that will trigger the alarm state that will perform the fail open"
+    Default: "2"
+  LogLevel:
+    Type: String
+    AllowedValues: [DEBUG, INFO, WARNING, ERROR, FATAL]
+    Default: INFO
+    Description: Level of the logging of the lambda function.
+
+  HostedZoneID:
+    Type: AWS::Route53::HostedZone::Id
+    Description: "Hosted zone where the failover record sets will be created."
+  RecordSetName:
+    Type: String
+    Description: "Name of the record sets that will reference the repository and sidecar."
+  RepoRecordSetType:
+    Type: String
+    AllowedValues: [CNAME, A, AAAA]
+    Default: CNAME
+    Description: |
+      Type of the record set for the repository informed in 'RepoAddress'. If a domain name was provided, then
+      choose 'CNAME', if IPv4 choose 'A' and if IPv6 choose 'AAAA'.
+  TTL:
+    Type: String
+    AllowedPattern: "\\d+"
+    Default: "60"
+    Description: "Time-to-live for the record set."
+
+
+Resources:
+  PrimaryRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Type: CNAME
+      Failover: PRIMARY
+      HealthCheckId: !Ref Route53HealthCheck
+      HostedZoneId: !Ref HostedZoneID
+      ResourceRecords:
+        - !Ref SidecarAddress
+      Name: !Ref RecordSetName
+      TTL: !Ref TTL
+      SetIdentifier: "sidecar"
+
+  SecondaryRecordSet:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Type: !Ref RepoRecordSetType
+      Failover: SECONDARY
+      HostedZoneId: !Ref HostedZoneID
+      ResourceRecords:
+        - !Ref RepoAddress
+      Name: !Ref RecordSetName
+      TTL: !Ref TTL
+      SetIdentifier: "database"
+
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          FromPort: "-1"
+          ToPort: "-1"
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+      VpcId: !Ref VPC
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName: !Ref AWS::StackName
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource:
+                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RepoSecretsLocation}*'
+
+              - Effect: Allow
+                Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                Resource: '*'
+
+              - Effect: Allow
+                Action:
+                  - logs:PutLogEvents
+                  - logs:CreateLogStream
+                  - logs:CreateLogGroup
+                  - logs:DescribeLogStreams
+                Resource:
+                  - !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: '*'
+
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ImageUri: !Ref ImageUri
+      Environment:
+        Variables:
+          SIDECAR_NAME: !Ref SidecarNamePrefix
+          SIDECAR_PORT: !Ref SidecarPort
+          SIDECAR_ADDRESS: !Ref SidecarAddress
+          CF_STACK_NAME: !Ref AWS::StackName
+          REPO_SECRET: !Ref RepoSecretsLocation
+          REPO_PORT: !Ref RepoPort
+          REPO_DATABASE: !Ref RepoDatabase
+          REPO_ADDRESS: !Ref RepoAddress
+          N_RETRIES: !Sub "${NumberOfRetries}"
+          LOG_LEVEL: !Ref LogLevel
+      FunctionName: !Ref AWS::StackName
+      Timeout: "10"
+      PackageType: Image
+      Role:
+        !GetAtt LambdaExecutionRole.Arn
+      VpcConfig:
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+        SubnetIds: !Ref Subnets
+
+  Events:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Route53 Health Check
+      Name: !Ref AWS::StackName
+      ScheduleExpression: rate(1 minute)
+      State: ENABLED
+      Targets:
+        - Id: EVENTS
+          Arn: !GetAtt LambdaFunction.Arn
+
+  EventPermission:
+    DependsOn: LambdaFunction
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AWS::StackName
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt Events.Arn
+
+  Route53CloudWatchAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: "Alarm for Route53 Health Check"
+      AlarmName: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
+      MetricName: !Sub '${SidecarNamePrefix}: ${AWS::StackName} (Health Check for resource ${SidecarAddress})'
+      Namespace: "Route53PrivateHealthCheck"
+      ComparisonOperator: LessThanThreshold
+      DatapointsToAlarm: !Ref ConsecutiveFailuresForTrigger
+      EvaluationPeriods: !Ref ConsecutiveFailuresForTrigger
+      Period: 60
+      Statistic: "Minimum"
+      Threshold: 1
+      Dimensions:
+        - Name: !Sub ${SidecarNamePrefix} Health Check
+          Value: !Sub ${SidecarNamePrefix} Health Check
+      TreatMissingData: "breaching"
+
+  Route53HealthCheck:
+    Type: AWS::Route53::HealthCheck
+    DependsOn: Route53CloudWatchAlarm
+    Properties:
+      HealthCheckConfig:
+        AlarmIdentifier:
+          Name: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
+          Region: !Ref AWS::Region
+        InsufficientDataHealthStatus: Unhealthy
+        Type: CLOUDWATCH_METRIC
+      HealthCheckTags:
+        - Key: Name
+          Value: !Ref AWS::StackName
