@@ -77,7 +77,7 @@ ready before you give it a go.
 
 - A list of subnets with access to the sidecar, the repository, AWS CloudWatch, and AWS Secrets Manager.
   These subnets are the ones where the lambda will be deployed. One way to configure access to 
-  CloudWatch and Secrets Manager from Labmda is to [follow these steps](https://aws.amazon.com/premiumsupport/knowledge-center/internet-access-lambda-function/) 
+  CloudWatch and Secrets Manager from Lambda is to [follow these steps](https://aws.amazon.com/premiumsupport/knowledge-center/internet-access-lambda-function/) 
   up to the step, `Verify that your network ACL allows outbound requests from your Lambda function, and inbound traffic as needed`,
   and then attach the lambda to the created subnets.
 
