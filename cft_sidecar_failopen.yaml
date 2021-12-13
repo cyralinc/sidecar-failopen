@@ -5,7 +5,7 @@ Metadata:
       - Label:
           default: Sidecar information
         Parameters:
-          - SidecarAddress
+          - SidecarHost
           - SidecarNamePrefix
           - SidecarPort
       - Label:
@@ -37,7 +37,7 @@ Metadata:
           - ConsecutiveFailuresForTrigger
 
 Parameters:
-  SidecarAddress:
+  SidecarHost:
     Type: String
     Description: "Domain name of the sidecar load balancer."
   SidecarNamePrefix:
@@ -140,7 +140,7 @@ Resources:
       HealthCheckId: !Ref Route53HealthCheck
       HostedZoneId: !Ref HostedZoneID
       ResourceRecords:
-        - !Ref SidecarAddress
+        - !Ref SidecarHost
       Name: !Ref RecordSetName
       TTL: !Ref TTL
       SetIdentifier: "sidecar"
@@ -225,12 +225,12 @@ Resources:
         Variables:
           SIDECAR_NAME: !Ref SidecarNamePrefix
           SIDECAR_PORT: !Ref SidecarPort
-          SIDECAR_ADDRESS: !Ref SidecarAddress
+          SIDECAR_HOST: !Ref SidecarHost
           CF_STACK_NAME: !Ref AWS::StackName
           REPO_SECRET: !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
           REPO_PORT: !Ref RepoPort
           REPO_DATABASE: !Ref RepoDatabase
-          REPO_ADDRESS: !Ref RepoHost
+          REPO_HOST: !Ref RepoHost
           N_RETRIES: !Sub "${NumberOfRetries}"
           LOG_LEVEL: !Ref LogLevel
       FunctionName: !Ref AWS::StackName
@@ -268,7 +268,7 @@ Resources:
     Properties:
       AlarmDescription: "Alarm for Route53 Health Check"
       AlarmName: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
-      MetricName: !Sub '${SidecarNamePrefix}: ${AWS::StackName} (Health Check for resource ${SidecarAddress})'
+      MetricName: !Sub '${SidecarNamePrefix}: ${AWS::StackName} (Health Check for resource ${SidecarHost})'
       Namespace: "Route53PrivateHealthCheck"
       ComparisonOperator: LessThanThreshold
       DatapointsToAlarm: !Ref ConsecutiveFailuresForTrigger
