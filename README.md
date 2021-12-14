@@ -108,4 +108,4 @@ This may be due to the DNS TTL in your runtime. The JVM default DNS TTL is 60s, 
 
 > - The health check applied by the lambda does not conform to my needs.
 
-The repository for the lambda is open source, and can be forked and updated as needed. You can publish it to your local AWS account and refer to the your lambda version when deploying the CloudFormation template.
+The repository for the lambda is open source, and can be forked and updated as needed. You can publish it to your local AWS account and refer to your lambda store location when deploying the CloudFormation template.
