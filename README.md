@@ -100,7 +100,7 @@ This depends on the configuration you've set up. The default delay is around 4 m
 
 > - What is the time delay between the sidecar being back up and the record switching back?
 
-This takes around 2 minutes and **cannot be configured** as this determined by the Route53 and CloudWatch behavior.
+This takes around 2 minutes and **cannot be configured** as this is determined by the current behaviors of Route53 and CloudWatch.
 
 > - After the Fail Open is triggered my application is still resolving to the same address.
 
