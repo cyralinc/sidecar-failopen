@@ -5,14 +5,16 @@ Metadata:
       - Label:
           default: Sidecar information
         Parameters:
-          - SidecarAddress
+          - SidecarHost
           - SidecarNamePrefix
           - SidecarPort
       - Label:
           default: Repository Configuration
         Parameters:
-          - RepoSecretsLocation
-          - RepoAddress
+          - RepoSecretArn
+          - RepoUsername
+          - RepoPassword
+          - RepoHost
           - RepoPort
           - RepoDatabase
       - Label:
@@ -35,7 +37,7 @@ Metadata:
           - ConsecutiveFailuresForTrigger
 
 Parameters:
-  SidecarAddress:
+  SidecarHost:
     Type: String
     Description: "Domain name of the sidecar load balancer."
   SidecarNamePrefix:
@@ -45,10 +47,18 @@ Parameters:
     Type: String
     Description: "Port allocated on the sidecar for this repository."
 
-  RepoSecretsLocation:
+  RepoSecretArn:
     Type: String
     Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."
-  RepoAddress:
+  RepoUsername:
+    Type: String
+    Description: "Username for the repository over which the fail-over will be installed."
+    NoEcho: True
+  RepoPassword:
+    Type: String
+    Description: "Password for the repository over which the fail-over will be installed."
+    NoEcho: True
+  RepoHost:
     Type: String
     Description: "CNAME or IP address used to access the repository."
   RepoPort:
@@ -96,7 +106,7 @@ Parameters:
     AllowedValues: [CNAME, A, AAAA]
     Default: CNAME
     Description: |
-      Type of the record set for the repository informed in 'RepoAddress'. If a domain name was provided, then
+      Type of the record set for the repository informed in 'RepoHost'. If a domain name was provided, then
       choose 'CNAME', if IPv4 choose 'A' and if IPv6 choose 'AAAA'.
   TTL:
     Type: String
@@ -104,8 +114,26 @@ Parameters:
     Default: "60"
     Description: "Time-to-live for the record set."
 
+Conditions:
+  CreateRepoSecret: !And
+    - !Equals [!Ref RepoSecretArn, ""]
+    - !Not [!Equals [!Ref RepoUsername, ""]]
+    - !Not [!Equals [!Ref RepoPassword, ""]]
 
 Resources:
+  RepoSecret:
+    Condition: CreateRepoSecret
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: username and password for the repository
+      Name: !Sub '/${AWS::StackName}/RepoSecret'
+      SecretString: !Sub
+        - '{"username":"${username}","password":"${password}"}'
+        - username: !Join ['\\"', !Split ['"', !Ref RepoUsername]]
+          password: !Join ['\\"', !Split ['"', !Ref RepoPassword]]
+      Tags:
+        - Key: 'Stack'
+          Value: !Ref 'AWS::StackName'
   PrimaryRecordSet:
     Type: AWS::Route53::RecordSet
     Properties:
@@ -114,7 +142,7 @@ Resources:
       HealthCheckId: !Ref Route53HealthCheck
       HostedZoneId: !Ref HostedZoneID
       ResourceRecords:
-        - !Ref SidecarAddress
+        - !Ref SidecarHost
       Name: !Ref RecordSetName
       TTL: !Ref TTL
       SetIdentifier: "sidecar"
@@ -126,7 +154,7 @@ Resources:
       Failover: SECONDARY
       HostedZoneId: !Ref HostedZoneID
       ResourceRecords:
-        - !Ref RepoAddress
+        - !Ref RepoHost
       Name: !Ref RecordSetName
       TTL: !Ref TTL
       SetIdentifier: "database"
@@ -166,7 +194,7 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                 Resource:
-                  - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${RepoSecretsLocation}*'
+                  - !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
 
               - Effect: Allow
                 Action:
@@ -199,12 +227,12 @@ Resources:
         Variables:
           SIDECAR_NAME: !Ref SidecarNamePrefix
           SIDECAR_PORT: !Ref SidecarPort
-          SIDECAR_ADDRESS: !Ref SidecarAddress
+          SIDECAR_HOST: !Ref SidecarHost
           CF_STACK_NAME: !Ref AWS::StackName
-          REPO_SECRET: !Ref RepoSecretsLocation
+          REPO_SECRET: !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
           REPO_PORT: !Ref RepoPort
           REPO_DATABASE: !Ref RepoDatabase
-          REPO_ADDRESS: !Ref RepoAddress
+          REPO_HOST: !Ref RepoHost
           N_RETRIES: !Sub "${NumberOfRetries}"
           LOG_LEVEL: !Ref LogLevel
       FunctionName: !Ref AWS::StackName
@@ -242,7 +270,7 @@ Resources:
     Properties:
       AlarmDescription: "Alarm for Route53 Health Check"
       AlarmName: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
-      MetricName: !Sub '${SidecarNamePrefix}: ${AWS::StackName} (Health Check for resource ${SidecarAddress})'
+      MetricName: !Sub '${SidecarNamePrefix}: ${AWS::StackName} (Health Check for resource ${SidecarHost})'
       Namespace: "Route53PrivateHealthCheck"
       ComparisonOperator: LessThanThreshold
       DatapointsToAlarm: !Ref ConsecutiveFailuresForTrigger
