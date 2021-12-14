@@ -53,9 +53,11 @@ Parameters:
   RepoUsername:
     Type: String
     Description: "Username for the repository over which the fail-over will be installed."
+    NoEcho: True
   RepoPassword:
     Type: String
     Description: "Password for the repository over which the fail-over will be installed."
+    NoEcho: True
   RepoHost:
     Type: String
     Description: "CNAME or IP address used to access the repository."
@@ -119,7 +121,7 @@ Conditions:
     - !Not [!Equals [!Ref RepoPassword, ""]]
 
 Resources:
-   RepoSecret:
+  RepoSecret:
     Condition: CreateRepoSecret
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -192,7 +194,7 @@ Resources:
                 Action:
                   - "secretsmanager:GetSecretValue"
                 Resource:
-                  - - !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
+                  - !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
 
               - Effect: Allow
                 Action:
