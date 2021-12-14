@@ -92,3 +92,21 @@ ready before you give it a go.
 
 - The database name against which the health check commands will be executed.
 
+# FAQ
+
+> - What is the time difference between the sidecar being unavailable and the Fail Open triggering?
+
+This depends on the configuration you've set up. The default time is around 4 minutes from the first instant where the sidecar becomes unavailable, 2 of those 4 being because of the `ConsecutivesFailuresForTrigger` parameter, which can be brought down from 2 to 1, causing that time to diminish to around 3 seconds. This parameter can also be increased if the trigger needs to wait longer before switching the DNS record.
+
+
+> - What is the time difference between the sidecar being back up and the record switching back?
+
+This takes around 2 minutes and cannot be configured.
+
+> - After the alarm is triggered my application is still resolving to the same address.
+
+This may be because of the DNS cache in your runtime. The JVM default `TTL` is 60s, for example. Refer to the documentation on your application/operational system to change the DNS TTL, if necessary.
+
+> - The health check applied by the lambda does not conform to my needs.
+
+The repository for the lambda is open source, and can be forked and updated as needed.
