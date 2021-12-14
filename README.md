@@ -94,7 +94,7 @@ ready before you give it a go.
 
 # FAQ
 
-> - What is the time difference between the sidecar being unavailable and the Fail Open triggering?
+> - What is the time delay between the sidecar being unavailable and the Fail Open triggering?
 
 This depends on the configuration you've set up. The default time is around 4 minutes from the first instant where the sidecar becomes unavailable, 2 of those 4 being because of the `ConsecutivesFailuresForTrigger` parameter, which can be brought down from 2 to 1, causing that time to diminish to around 3 seconds. This parameter can also be increased if the trigger needs to wait longer before switching the DNS record.
 
