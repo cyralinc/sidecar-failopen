@@ -96,17 +96,16 @@ ready before you give it a go.
 
 > - What is the time delay between the sidecar being unavailable and the Fail Open triggering?
 
-This depends on the configuration you've set up. The default time is around 4 minutes from the first instant where the sidecar becomes unavailable, 2 of those 4 being because of the `ConsecutivesFailuresForTrigger` parameter, which can be brought down from 2 to 1, causing that time to diminish to around 3 seconds. This parameter can also be increased if the trigger needs to wait longer before switching the DNS record.
+This depends on the configuration you've set up. The default delay is around 4 minutes from the first instant where the sidecar becomes unavailable, 2 of those 4 being due to the `ConsecutivesFailuresForTrigger` parameter, which can be reduced from 2 to 1, causing this time to diminish to around 3 minutes. This parameter can also be increased if the trigger needs to wait longer before switching the DNS record.
 
+> - What is the time delay between the sidecar being back up and the record switching back?
 
-> - What is the time difference between the sidecar being back up and the record switching back?
+This takes around 2 minutes and **cannot be configured** as this determined by the Route53 and CloudWatch behavior.
 
-This takes around 2 minutes and cannot be configured.
+> - After the Fail Open is triggered my application is still resolving to the same address.
 
-> - After the alarm is triggered my application is still resolving to the same address.
-
-This may be because of the DNS cache in your runtime. The JVM default `TTL` is 60s, for example. Refer to the documentation on your application/operational system to change the DNS TTL, if necessary.
+This may be due to the DNS TTL in your runtime. The JVM default DNS TTL is 60s, for example. Refer to the documentation on your application/operational system to change it, if necessary.
 
 > - The health check applied by the lambda does not conform to my needs.
 
-The repository for the lambda is open source, and can be forked and updated as needed.
+The repository for the lambda is open source, and can be forked and updated as needed. You can publish it to your local AWS account and refer to the your lambda version when deploying the CloudFormation template.
