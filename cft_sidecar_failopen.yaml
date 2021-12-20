@@ -28,7 +28,6 @@ Metadata:
         Parameters:
           - VPC
           - Subnets
-          - ImageUri
           - NumberOfRetries
           - LogLevel
       - Label:
@@ -37,6 +36,12 @@ Metadata:
           - ConsecutiveFailuresForTrigger
 
 Parameters:
+
+  Version:
+    Type: String
+    Description: Version of the function
+    Default: v0.3.0-rc+5
+
   SidecarHost:
     Type: String
     Description: "Domain name of the sidecar load balancer."
@@ -77,9 +82,7 @@ Parameters:
     Description: |
       The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository.
       These subnets must also support communication with CloudWatch and Secrets Manager.
-  ImageUri:
-    Type: String
-    Description: "URI of a container image in the Amazon ECR registry that contains the health check lambda."
+
   NumberOfRetries:
     Type: String
     Default: "3"
@@ -222,7 +225,8 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ImageUri: !Ref ImageUri
+        S3Bucket: !Sub "cyral-public-assets-${AWS::Region}"
+        S3Key: !Sub "fail-open/fail-open-lambda-${Version}.zip"
       Environment:
         Variables:
           SIDECAR_NAME: !Ref SidecarNamePrefix
@@ -237,7 +241,8 @@ Resources:
           LOG_LEVEL: !Ref LogLevel
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
-      PackageType: Image
+      PackageType: Zip
+      Runtime: python3.9
       Role:
         !GetAtt LambdaExecutionRole.Arn
       VpcConfig:
