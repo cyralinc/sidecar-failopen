@@ -243,6 +243,7 @@ Resources:
       Timeout: "10"
       PackageType: Zip
       Runtime: python3.9
+      Handler: app.entrypoint
       Role:
         !GetAtt LambdaExecutionRole.Arn
       VpcConfig:
