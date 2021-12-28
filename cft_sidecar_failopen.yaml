@@ -40,7 +40,7 @@ Parameters:
   Version:
     Type: String
     Description: Version of the function
-    Default: v0.3.0-rc+5
+    Default: v0.3.0-rc+19
 
   SidecarHost:
     Type: String
