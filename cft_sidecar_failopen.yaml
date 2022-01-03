@@ -11,6 +11,7 @@ Metadata:
       - Label:
           default: Repository Configuration
         Parameters:
+          - RepoType
           - RepoSecretArn
           - RepoUsername
           - RepoPassword
@@ -41,6 +42,11 @@ Parameters:
     Type: String
     Description: Version of the function
     Default: v0.3.0-rc+19
+  Environment:
+    Type: String
+    Description: Environment of the deployment version
+    Default: prod
+    AllowedValues: [prod, dev]
 
   SidecarHost:
     Type: String
@@ -52,6 +58,10 @@ Parameters:
     Type: String
     Description: "Port allocated on the sidecar for this repository."
 
+  RepoType:
+    Type: String
+    Description: "The type of the repo that will be tested"
+    AllowedValues: [mysql, oracle, pg]
   RepoSecretArn:
     Type: String
     Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."
@@ -122,6 +132,9 @@ Conditions:
     - !Equals [!Ref RepoSecretArn, ""]
     - !Not [!Equals [!Ref RepoUsername, ""]]
     - !Not [!Equals [!Ref RepoPassword, ""]]
+  CreateOracleLayler: !Equals [!Ref RepoType, "oracle"]
+  CreatePGLayer: !Equals [!Ref RepoType, "pg"]
+  IsDevelopmentEnvironment: !Equals [!Ref Environment, "dev"]
 
 Resources:
   RepoSecret:
@@ -226,13 +239,14 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Sub "cyral-public-assets-${AWS::Region}"
-        S3Key: !Sub "fail-open/fail-open-lambda-${Version}.zip"
+        S3Key: !Join ["/", [!If [IsDevelopmentEnvironment, fail-open-dev, fail-open], !Sub "fail-open-lambda-${Version}.zip"]]
       Environment:
         Variables:
           SIDECAR_NAME: !Ref SidecarNamePrefix
           SIDECAR_PORT: !Ref SidecarPort
           SIDECAR_HOST: !Ref SidecarHost
           CF_STACK_NAME: !Ref AWS::StackName
+          REPO_TYPE: !Ref RepoType
           REPO_SECRET: !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
           REPO_PORT: !Ref RepoPort
           REPO_DATABASE: !Ref RepoDatabase
@@ -242,8 +256,9 @@ Resources:
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
       PackageType: Zip
-      Runtime: python3.9
+      Runtime: python3.8
       Handler: app.entrypoint
+      Layers: [ !If [CreatePGLayer, !Sub "arn:aws:lambda:${AWS::Region}:898466741470:layer:psycopg2-py38:1", ""] ]
       Role:
         !GetAtt LambdaExecutionRole.Arn
       VpcConfig:
