@@ -61,7 +61,7 @@ Parameters:
   RepoType:
     Type: String
     Description: "The type of the repo that will be tested"
-    AllowedValues: [mysql, oracle, pg]
+    AllowedValues: [mysql, pg]
   RepoSecretArn:
     Type: String
     Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."
@@ -132,7 +132,6 @@ Conditions:
     - !Equals [!Ref RepoSecretArn, ""]
     - !Not [!Equals [!Ref RepoUsername, ""]]
     - !Not [!Equals [!Ref RepoPassword, ""]]
-  CreateOracleLayler: !Equals [!Ref RepoType, "oracle"]
   CreatePGLayer: !Equals [!Ref RepoType, "pg"]
   IsDevelopmentEnvironment: !Equals [!Ref Environment, "dev"]
 
@@ -239,7 +238,7 @@ Resources:
     Properties:
       Code:
         S3Bucket: !Sub "cyral-public-assets-${AWS::Region}"
-        S3Key: !Join ["/", [!If [IsDevelopmentEnvironment, fail-open-dev, fail-open], !Sub "fail-open-lambda-${Version}.zip"]]
+        S3Key: !Join ["/", [!If [IsDevelopmentEnvironment, fail-open/dev, fail-open], !Sub "fail-open-lambda-${Version}.zip"]]
       Environment:
         Variables:
           SIDECAR_NAME: !Ref SidecarNamePrefix
@@ -258,7 +257,6 @@ Resources:
       PackageType: Zip
       Runtime: python3.8
       Handler: app.entrypoint
-      Layers: [ !If [CreatePGLayer, !Sub "arn:aws:lambda:${AWS::Region}:898466741470:layer:psycopg2-py38:1", ""] ]
       Role:
         !GetAtt LambdaExecutionRole.Arn
       VpcConfig:
