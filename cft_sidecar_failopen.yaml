@@ -60,7 +60,7 @@ Parameters:
 
   RepoType:
     Type: String
-    Description: "The type of the repo that will be tested"
+    Description: "The type of the repository that the health check will connect to."
     AllowedValues: [mysql, pg]
   RepoSecretArn:
     Type: String
