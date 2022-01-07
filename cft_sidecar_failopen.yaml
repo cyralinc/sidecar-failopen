@@ -6,7 +6,6 @@ Metadata:
           default: Sidecar information
         Parameters:
           - SidecarHost
-          - SidecarNamePrefix
           - SidecarPort
       - Label:
           default: Repository Configuration
@@ -25,35 +24,27 @@ Metadata:
           - RecordSetName
           - RepoRecordSetType
       - Label:
+          default:  Lambda configuration
+        Parameters:
+          - FailOpenCodeS3Bucket
+          - FailOpenCodeS3Key
+          - NumberOfRetries
+          - LogLevel
+      - Label:
           default: Networking and Lambda configuration
         Parameters:
           - VPC
           - Subnets
-          - NumberOfRetries
-          - LogLevel
       - Label:
           default: Trigger configuration
         Parameters:
           - ConsecutiveFailuresForTrigger
+          - ScheduleExpression
 
 Parameters:
-
-  Version:
-    Type: String
-    Description: Version of the function
-    Default: v0.3.0-rc+19
-  Environment:
-    Type: String
-    Description: Environment of the deployment version
-    Default: prod
-    AllowedValues: [prod, dev]
-
   SidecarHost:
     Type: String
     Description: "Domain name of the sidecar load balancer."
-  SidecarNamePrefix:
-    Type: String
-    Description: "Name prefix of the sidecar. This parameter is used to identify the elements of this stack and also the events created during runtime."
   SidecarPort:
     Type: String
     Description: "Port allocated on the sidecar for this repository."
@@ -61,17 +52,17 @@ Parameters:
   RepoType:
     Type: String
     Description: "The type of the repository that the health check will connect to."
-    AllowedValues: [mysql, pg]
+    AllowedValues: [mysql, postgresql]
   RepoSecretArn:
     Type: String
     Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."
   RepoUsername:
     Type: String
-    Description: "Username for the repository over which the fail-over will be installed."
+    Description: "The username that the health check will use to connect to the repository."
     NoEcho: True
   RepoPassword:
     Type: String
-    Description: "Password for the repository over which the fail-over will be installed."
+    Description: "The corresponding password for the username that the health check will use to connect to the repository."
     NoEcho: True
   RepoHost:
     Type: String
@@ -93,15 +84,17 @@ Parameters:
       The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository.
       These subnets must also support communication with CloudWatch and Secrets Manager.
 
+  FailOpenCodeS3Bucket:
+    Type: String
+    Description: "S3 bucket that contains the Repo Crawler Lambda deployment package. LEAVE EMPTY UNLESS YOU WANT TO OVERRIDE THE DEFAULT."
+  FailOpenCodeS3Key:
+    Type: String
+    Description: "Object key for the Lambda deployment package on the S3 bucket. LEAVE EMPTY UNLESS YOU WANT TO OVERRIDE THE DEFAULT."
   NumberOfRetries:
     Type: String
     Default: "3"
     Description: "Number of failed consecutive health check attempts before the lambda sets the metric as unhealthy."
     AllowedPattern: "\\d+"
-  ConsecutiveFailuresForTrigger:
-    Type: String
-    Description: "Number of consecutive failures that will trigger the alarm state that will perform the fail open"
-    Default: "2"
   LogLevel:
     Type: String
     AllowedValues: [DEBUG, INFO, WARNING, ERROR, FATAL]
@@ -126,14 +119,23 @@ Parameters:
     AllowedPattern: "\\d+"
     Default: "60"
     Description: "Time-to-live for the record set."
+  ConsecutiveFailuresForTrigger:
+    Type: String
+    Description: "Number of consecutive failures that will trigger the alarm state that will perform the fail open"
+    Default: "2"
+  ScheduleExpression:
+    Description: "Schedule expression to invoke the repo crawler. Default is rate(1 minute)."
+    Type: String
+    Default: "rate(1 minute)"
+    AllowedPattern: '^cron\(([^ ]+ ){5}[^ ]+\)|rate\([^ ]+ [^ ]+\)$'
 
 Conditions:
   CreateRepoSecret: !And
     - !Equals [!Ref RepoSecretArn, ""]
     - !Not [!Equals [!Ref RepoUsername, ""]]
     - !Not [!Equals [!Ref RepoPassword, ""]]
-  CreatePGLayer: !Equals [!Ref RepoType, "pg"]
-  IsDevelopmentEnvironment: !Equals [!Ref Environment, "dev"]
+  UseDefaultCodeS3Bucket: !Equals [!Ref FailOpenCodeS3Bucket, ""]
+  UseDefaultCodeS3Key: !Equals [!Ref FailOpenCodeS3Key, ""]
 
 Resources:
   RepoSecret:
@@ -177,7 +179,7 @@ Resources:
   LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
+      GroupDescription: !Sub '${SidecarHost}-${RepoType}-${RepoHost}: ${AWS::StackName}'
       SecurityGroupEgress:
         - IpProtocol: "-1"
           FromPort: "-1"
@@ -237,21 +239,21 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        S3Bucket: !Sub "cyral-public-assets-${AWS::Region}"
-        S3Key: !Join ["/", [!If [IsDevelopmentEnvironment, fail-open/dev, fail-open], !Sub "fail-open-lambda-${Version}.zip"]]
+        S3Bucket: !If [UseDefaultCodeS3Bucket, !Sub 'cyral-public-assets-${AWS::Region}', !Ref FailOpenCodeS3Bucket]
+        # This is populated in at build time
+        S3Key: !If [UseDefaultCodeS3Key, "CYRAL_REPO_CRAWLER_S3_KEY_PLACEHOLDER", !Ref FailOpenCodeS3Key]
       Environment:
         Variables:
-          SIDECAR_NAME: !Ref SidecarNamePrefix
-          SIDECAR_PORT: !Ref SidecarPort
-          SIDECAR_HOST: !Ref SidecarHost
-          CF_STACK_NAME: !Ref AWS::StackName
-          REPO_TYPE: !Ref RepoType
-          REPO_SECRET: !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
-          REPO_PORT: !Ref RepoPort
-          REPO_DATABASE: !Ref RepoDatabase
-          REPO_HOST: !Ref RepoHost
-          N_RETRIES: !Sub "${NumberOfRetries}"
-          LOG_LEVEL: !Ref LogLevel
+          FAIL_OPEN_SIDECAR_PORT: !Ref SidecarPort
+          FAIL_OPEN_SIDECAR_HOST: !Ref SidecarHost
+          FAIL_OPEN_CF_STACK_NAME: !Ref AWS::StackName
+          FAIL_OPEN_REPO_TYPE: !Ref RepoType
+          FAIL_OPEN_REPO_SECRET: !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
+          FAIL_OPEN_REPO_PORT: !Ref RepoPort
+          FAIL_OPEN_REPO_DATABASE: !Ref RepoDatabase
+          FAIL_OPEN_REPO_HOST: !Ref RepoHost
+          FAIL_OPEN_N_RETRIES: !Sub "${NumberOfRetries}"
+          FAIL_OPEN_LOG_LEVEL: !Ref LogLevel
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
       PackageType: Zip
@@ -269,7 +271,7 @@ Resources:
     Properties:
       Description: Route53 Health Check
       Name: !Ref AWS::StackName
-      ScheduleExpression: rate(1 minute)
+      ScheduleExpression: !Ref ScheduleExpression
       State: ENABLED
       Targets:
         - Id: EVENTS
@@ -287,10 +289,10 @@ Resources:
   Route53CloudWatchAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: "Alarm for Route53 Health Check"
-      AlarmName: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
-      MetricName: !Sub '${SidecarNamePrefix}: ${AWS::StackName} (Health Check for resource ${SidecarHost})'
-      Namespace: "Route53PrivateHealthCheck"
+      AlarmDescription: !Sub "Alarm for Cyral Sidecar located at ${SidecarHost}, connecting to repo of ${RepoType} type"
+      AlarmName: !Sub '${SidecarHost}-${RepoType}-${RepoHost}: ${AWS::StackName}'
+      MetricName: !Sub '${SidecarHost}-${RepoType}-${RepoHost}: ${AWS::StackName} (Health Check for resource ${SidecarHost})'
+      Namespace: "CyralSidecarHealthChecks"
       ComparisonOperator: LessThanThreshold
       DatapointsToAlarm: !Ref ConsecutiveFailuresForTrigger
       EvaluationPeriods: !Ref ConsecutiveFailuresForTrigger
@@ -298,8 +300,8 @@ Resources:
       Statistic: "Minimum"
       Threshold: 1
       Dimensions:
-        - Name: !Sub ${SidecarNamePrefix} Health Check
-          Value: !Sub ${SidecarNamePrefix} Health Check
+        - Name: !Sub ${SidecarHost} ${RepoType} ${RepoHost} Health Check
+          Value: !Sub ${SidecarHost} ${RepoType} ${RepoHost} Health Check
       TreatMissingData: "breaching"
 
   Route53HealthCheck:
@@ -308,7 +310,7 @@ Resources:
     Properties:
       HealthCheckConfig:
         AlarmIdentifier:
-          Name: !Sub '${SidecarNamePrefix}: ${AWS::StackName}'
+          Name: !Sub '${SidecarHost}-${RepoType}-${RepoHost}: ${AWS::StackName}'
           Region: !Ref AWS::Region
         InsufficientDataHealthStatus: Unhealthy
         Type: CLOUDWATCH_METRIC
