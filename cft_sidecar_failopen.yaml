@@ -26,6 +26,7 @@ Metadata:
       - Label:
           default:  Lambda configuration
         Parameters:
+          - Version
           - FailOpenCodeS3Bucket
           - FailOpenCodeS3Key
           - NumberOfRetries
@@ -84,9 +85,13 @@ Parameters:
       The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository.
       These subnets must also support communication with CloudWatch and Secrets Manager.
 
+  Version:
+    Type: String
+    Default: v0.0.3
+    AllowedValues: ["v0.0.3"]
   FailOpenCodeS3Bucket:
     Type: String
-    Description: "S3 bucket that contains the Repo Crawler Lambda deployment package. LEAVE EMPTY UNLESS YOU WANT TO OVERRIDE THE DEFAULT."
+    Description: "S3 bucket that contains the Fail Open Lambda deployment package. LEAVE EMPTY UNLESS YOU WANT TO OVERRIDE THE DEFAULT."
   FailOpenCodeS3Key:
     Type: String
     Description: "Object key for the Lambda deployment package on the S3 bucket. LEAVE EMPTY UNLESS YOU WANT TO OVERRIDE THE DEFAULT."
@@ -124,7 +129,7 @@ Parameters:
     Description: "Number of consecutive failures that will trigger the alarm state that will perform the fail open"
     Default: "2"
   ScheduleExpression:
-    Description: "Schedule expression to invoke the repo crawler. Default is rate(1 minute)."
+    Description: "Schedule expression to invoke the health check. Default is rate(1 minute)."
     Type: String
     Default: "rate(1 minute)"
     AllowedPattern: '^cron\(([^ ]+ ){5}[^ ]+\)|rate\([^ ]+ [^ ]+\)$'
@@ -241,7 +246,7 @@ Resources:
       Code:
         S3Bucket: !If [UseDefaultCodeS3Bucket, !Sub 'cyral-public-assets-${AWS::Region}', !Ref FailOpenCodeS3Bucket]
         # This is populated in at build time
-        S3Key: !If [UseDefaultCodeS3Key, "CYRAL_REPO_CRAWLER_S3_KEY_PLACEHOLDER", !Ref FailOpenCodeS3Key]
+        S3Key: !If [UseDefaultCodeS3Key, !Sub 'fail-open/${Version}/fail-open-lambda.zip', !Ref FailOpenCodeS3Key]
       Environment:
         Variables:
           FAIL_OPEN_SIDECAR_PORT: !Ref SidecarPort
