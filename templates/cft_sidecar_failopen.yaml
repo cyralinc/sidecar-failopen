@@ -258,11 +258,14 @@ Resources:
           FAIL_OPEN_REPO_HOST: !Ref RepoHost
           FAIL_OPEN_N_RETRIES: !Sub "${NumberOfRetries}"
           FAIL_OPEN_LOG_LEVEL: !Ref LogLevel
+          # adding oracle client path so that oracle client works
+          LD_LIBRARY_PATH: 'oracle-client_21_4'
+
       FunctionName: !Ref AWS::StackName
       Timeout: "10"
       PackageType: Zip
-      Runtime: python3.8
-      Handler: app.entrypoint
+      Runtime: go1.x
+      Handler: failopen
       Role:
         !GetAtt LambdaExecutionRole.Arn
       VpcConfig:

@@ -134,7 +134,7 @@ steps:
     id: "upload-us-east-1"
     entrypoint: "scripts/publish.sh"
     env:
-      - "BUCKET_KEY_PREFIX=fail-open/dev/"
+      - "BUCKET_KEY_PREFIX=fail-open/dev"
       - "VERSION=$BUILD_ID"
     args:
       - us-east-1
