@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/logging"
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/repository"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/logging"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository"
 )
 
 const (
@@ -68,6 +68,9 @@ func (repo *GenericSqlRepository) GetDb() *sql.DB {
 
 func (repo *GenericSqlRepository) Close() error {
 	return repo.db.Close()
+}
+func (repo *GenericSqlRepository) Type() string {
+	return "genericsql"
 }
 
 func getDbHandle(repoType, connStr string) (*sql.DB, error) {

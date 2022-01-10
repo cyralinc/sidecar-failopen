@@ -8,8 +8,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/config"
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/repository"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository"
 )
 
 func singleHealthCheck(ctx context.Context, sidecar repository.Repository, repo repository.Repository) (sErr, rErr error) {

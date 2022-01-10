@@ -1,8 +1,5 @@
-include .env
+test:
+	go test ./...
 
 build:
-	docker build . -t ${REGISTRY}:${VERSION}
-	docker push ${REGISTRY}:${VERSION}
-
-lint:
-	pylint app.py
+	go build ./cmd/failopen

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/config"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
 )
 
 type Repository interface {

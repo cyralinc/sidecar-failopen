@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/config"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
 )
 
 var client *cloudwatch.CloudWatch

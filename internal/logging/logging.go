@@ -3,7 +3,7 @@ package logging
 import (
 	"os"
 
-	_ "github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/config"
+	_ "github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

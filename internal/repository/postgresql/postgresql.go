@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/config"
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/keys"
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/logging"
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/repository"
-	"github.com/cyralinc/sidecar-failopen-healthcheck-aws/internal/repository/genericsql"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/keys"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/logging"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository/genericsql"
 
 	// Postgresql DB driver
 	_ "github.com/lib/pq"
