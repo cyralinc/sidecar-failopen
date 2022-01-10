@@ -145,8 +145,6 @@ steps:
     secretEnv: [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY]
 
 
-images: ["gcr.io/$PROJECT_ID/cyral-repo-failopen:$BUILD_ID"]
-
 availableSecrets:
   secretManager:
     - versionName: projects/cyral-dev/secrets/github-aws-key-secret/versions/3
