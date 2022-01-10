@@ -88,7 +88,6 @@ Parameters:
   Version:
     Type: String
     Default: v0.0.3
-    AllowedValues: ["v0.0.3"]
   FailOpenCodeS3Bucket:
     Type: String
     Description: "S3 bucket that contains the Fail Open Lambda deployment package. LEAVE EMPTY UNLESS YOU WANT TO OVERRIDE THE DEFAULT."
