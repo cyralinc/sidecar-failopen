@@ -1,1 +1,193 @@
+steps:
+  # Download the cicd key
+  - name: "gcr.io/cloud-builders/gsutil"
+    args:
+      - cp
+      - gs://cyral-keys/cicd_key.enc
+      - ./id_cicd.enc
+    id: "get-cicd-key"
 
+  # Decrypt the cicd key
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - kms
+      - decrypt
+      - --ciphertext-file=id_cicd.enc
+      - --plaintext-file=/root/.ssh/id_rsa
+      - --location=global
+      - --keyring=github-keyring
+      - --key=github-key
+    id: "decrypt-cicd-key"
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+# Set up git with key and domain.
+  - name: "gcr.io/cloud-builders/git"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        chmod 600 /root/.ssh/id_rsa
+        cat <<EOF >/root/.ssh/config
+        Hostname github.com
+        IdentityFile /root/.ssh/id_rsa
+        StrictHostKeyChecking no
+        EOF
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+    id: "ssh-config"
+
+  # Ask git to use ssh instead of https
+  - name: "gcr.io/cloud-builders/git"
+    args:
+      - config
+      - --global
+      - url.git@github.com:.insteadOf
+      - https://github.com/
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+    id: "git-config"
+
+  # Run unit tests
+  - name: golang
+    env:
+      - "PROJECT_ROOT=github.com/cyralinc/offline-data-classifier-go"
+      - "GO111MODULE=on"
+    args:
+      - make
+      - test
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+      - name: "go-modules"
+        path: /go
+    id: "unit-tests"
+    waitFor: ["git-config"]
+
+  # Run security tests
+  - name: securego/gosec
+    env:
+      - "GO111MODULE=on"
+    args:
+      - -no-fail
+      - ./...
+    volumes:
+      - name: "go-modules"
+        path: /go
+    id: "security-tests"
+    waitFor: ["unit-tests"]
+
+  # Run lint
+  - name: golangci/golangci-lint
+    env:
+      - "GO111MODULE=on"
+    args:
+      - golangci-lint
+      - run
+      - --issues-exit-code=0
+      - --timeout=5m
+    volumes:
+      - name: "go-modules"
+        path: /go
+    id: "run lint"
+    waitFor: ["unit-tests"]
+
+  # Build repo failopen binary
+  - name: golang:1.17
+    entrypoint: "bash"
+    env:
+      - "PROJECT_ROOT=github.com/cyralinc/offline-data-classifier-go"
+      - "GO111MODULE=on"
+      - "GOBIN=/workspace/bin"
+    args:
+      - "-c"
+      - |
+        set -e
+        mkdir -p /workspace/bin
+        cd cmd/failopen
+        go build -o /workspace/bin/failopen
+        cd ../failopen-lambda
+        go build -o /workspace/bin/failopen-lambda
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+      - name: "go-modules"
+        path: /go
+    id: "build-binary"
+    waitFor: ["unit-tests"]
+
+  # Build Lambda zip file
+  - name: debian:latest
+    entrypoint: "bash"
+    id: "build-lambda-zip"
+    args:
+      - "-c"
+      - |
+        set -e
+        apt update -y
+        apt-get install -y zip wget libaio1
+        client=instantclient_21_4
+        wget 'https://download.oracle.com/otn_software/linux/instantclient/214000/instantclient-basiclite-linux.x64-21.4.0.0.0dbru.zip' -O $client.zip
+        unzip $client.zip
+        cp $(readlink -f /usr/lib/x86_64-linux-gnu/libaio.so.1) $client/libaio.so.1
+        mv $client /workspace/oracle-client_21_4
+        cd /workspace
+        cp /workspace/bin/failopen-lambda failopen-lambda
+        zip -ry cyral-repo-failopen-lambda-${BUILD_ID}.zip failopen-lambda oracle-client_21_4
+    waitFor: [ "build-binary" ]
+
+  # Run docker linter
+  - name: "hadolint/hadolint:v2.5.0"
+    args:
+      - hadolint
+      - Dockerfile
+    id: "docker-lint"
+
+  # Build container image
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "--tag=gcr.io/$PROJECT_ID/cyral-repo-failopen:$BUILD_ID", "."]
+    id: "docker-build"
+    waitFor: ["build-binary", "docker-lint"]
+
+  # Publish zip file and CFT artifacts to S3
+  - name: "amazon/aws-cli"
+    id: "upload-s3"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        ./upload_s3.sh cyral-dev-artifacts "${BUILD_ID}" false
+    waitFor: [ "build-lambda-zip" ]
+    secretEnv:
+      - AWS_ACCESS_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+
+  # Cut release(s) if VERSIONS file has changed. This script just tags,
+  # the tagged images are produced by the then triggered cloudbuild.release.yaml
+  # script.
+  - name: "gcr.io/cloud-builders/git"
+    entrypoint: "bash"
+    args:
+      - ./cut-release.sh
+      - $BRANCH_NAME
+      - $REPO_NAME
+      - $COMMIT_SHA
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+    id: "cut-release"
+    waitFor: ["docker-build"]
+
+images: ["gcr.io/$PROJECT_ID/cyral-repo-failopen:$BUILD_ID"]
+
+secrets:
+  - secretManager:
+    - versionName: projects/cyral-dev/secrets/github-aws-key-secret/versions/3
+      env: AWS_SECRET_ACCESS_KEY
+    - versionName: projects/cyral-dev/secrets/github-aws-key-id/versions/3
+      env: AWS_ACCESS_KEY_ID
+
+options:
+  machineType: "E2_HIGHCPU_8"
