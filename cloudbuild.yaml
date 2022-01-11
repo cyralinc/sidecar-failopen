@@ -25,12 +25,13 @@ steps:
   - name: "gcr.io/cloud-builders/git"
     entrypoint: "bash"
     args:
-      - "-c" - |
+      - "-c"
+      - |
         chmod 600 /root/.ssh/id_rsa
         cat <<EOF >/root/.ssh/config
-        Hostname github.com
-        IdentityFile /root/.ssh/id_rsa
-        StrictHostKeyChecking no
+          Hostname github.com
+          IdentityFile /root/.ssh/id_rsa
+          StrictHostKeyChecking no
         EOF
     volumes:
       - name: "ssh"
