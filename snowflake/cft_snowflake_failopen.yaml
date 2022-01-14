@@ -41,7 +41,7 @@
     SidecarHost:
       Description: "Domain name of the sidecar load balancer."
       Type: String
-    SideCarDomainName:
+    SidecarDomainName:
       Description: "top level domain for the sidecar"
       Type: String
     SidecarNamePrefix:
@@ -50,7 +50,7 @@
     RepoHost:
       Description: "Full Snowflake Domain name"
       Type: String
-    SnowFlakeAccountName:
+    SnowflakeAccountName:
       Description: "Account name for the snowflake instance"
       Type: String
 
@@ -65,7 +65,6 @@
           Ref: "InstanceSecurityGroup"
         InstanceType:
           Ref: "InstanceType"
-#        LaunchConfigurationName: !Join ['-', [!Ref SidecarNamePrefix, SnowflakeFailOpen]]
         UserData:
           Fn::Base64: !Sub |
             #!/bin/bash -xe
@@ -117,7 +116,7 @@
             # Create the entry for sidecar domain
             gen_site_conf ${SidecarHost} ${RepoHost}
             # Create the entry for the snowflake domain for tableau users
-            gen_bi_site_conf ${SnowFlakeAccountName}.${SideCarDomainName} ${RepoHost}
+            gen_bi_site_conf ${SnowflakeAccountName}.${SidecarDomainName} ${RepoHost}
 
             systemctl enable nginx
             systemctl start nginx
