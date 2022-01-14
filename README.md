@@ -1,4 +1,4 @@
-# CloudFormation template for Cyral sidecar DNS fail-open for AWS
+# Cyral sidecar DNS fail-open for AWS
 
 ## Introduction
 
@@ -23,11 +23,17 @@ Our architecture is described in the image below:
 ![Cyral Sidecar Fail Open for AWS - Architecture](./img/fail_open_aws.png)
 
 
-The lambda function lives in [its own repo](https://github.com/cyralinc/health-check-aws).
+The lambda function lives in [its own repo](https://github.com/cyralinc/sidecar-failopen-healthcheck-aws).
 
 # Limitations
 
 Some limitations apply to the operation of the fail-open feature, as described below.
+
+## Repositories supported
+
+PostgreSQL and MySQL are supported in the current version of [the CFT](./cft_sidecar_failopen.yaml).
+
+Click [here for Snowflake support](./snowflake) and follow the instructions.
 
 ## DNS CNAME
 
@@ -109,3 +115,7 @@ This may be due to the DNS TTL in your runtime. The JVM default DNS TTL is 60s, 
 > - The health check applied by the lambda does not conform to my needs.
 
 The repository for the lambda is open source, and can be forked and updated as needed. You can publish it to your local AWS account and refer to your lambda store location when deploying the CloudFormation template.
+
+> - Does this support snowflake repositories
+
+At this time, snowflake specific repos have a separate fail open configuration that can be found within the [snowflake](./snowflake) directory in this repo.
