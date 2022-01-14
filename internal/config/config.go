@@ -89,6 +89,7 @@ func Config() *LambdaConfig {
 				User:     sec.Username,
 				Password: sec.Password,
 			},
+			StackName: viper.GetString("cf_stack_name"),
 		}
 	}
 
