@@ -3,7 +3,6 @@ package postgresql
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/keys"
@@ -30,15 +29,15 @@ var _ repository.Repository = (*postgresqlRepository)(nil)
 func NewPostgresqlRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
 
 	connStr := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%s/%s",
+		"postgresql://%s:%s@%s:%d/%s",
 		cfg.User,
 		cfg.Password,
 		cfg.Host,
-		strconv.Itoa(cfg.Port),
+		cfg.Port,
 		cfg.Database,
 	)
 
-	logging.Info("instantiating postgres repository at %s:%s", cfg.Host, cfg.Port)
+	logging.Info("instantiating postgres repository at %s:%d", cfg.Host, cfg.Port)
 
 	sqlRepo, err := genericsql.NewGenericSqlRepository(cfg.RepoName, PostgreSQL, cfg.Database, connStr)
 	if err != nil {

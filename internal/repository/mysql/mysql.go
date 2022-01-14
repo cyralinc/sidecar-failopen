@@ -3,7 +3,6 @@ package mysql
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/keys"
@@ -27,14 +26,14 @@ var _ repository.Repository = (*mySqlRepository)(nil)
 
 func NewMySQLRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
 	connStr := fmt.Sprintf(
-		"%s:%s@tcp(%s:%s)/%s",
+		"%s:%s@tcp(%s:%d)/%s",
 		cfg.User,
 		cfg.Password,
 		cfg.Host,
-		strconv.Itoa(cfg.Port),
+		cfg.Port,
 		cfg.Database,
 	)
-	logging.Info("instantiating mysql repository at %s:%s", cfg.Host, cfg.Port)
+	logging.Info("instantiating mysql repository at %s:%d", cfg.Host, cfg.Port)
 
 	sqlRepo, err := genericsql.NewGenericSqlRepository(cfg.RepoName, MySQL, cfg.Database, connStr)
 	if err != nil {

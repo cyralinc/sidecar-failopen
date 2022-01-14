@@ -3,7 +3,6 @@ package oracle
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/keys"
@@ -31,15 +30,15 @@ var _ repository.Repository = (*oracleRepository)(nil)
 func NewOracleRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
 
 	connStr := fmt.Sprintf(
-		`user="%s" password="%s" connectString="%s:%s/%s"`,
+		`user="%s" password="%s" connectString="%s:%s/%d"`,
 		cfg.User,
 		cfg.Password,
 		cfg.Host,
-		strconv.Itoa(cfg.Port),
+		cfg.Port,
 		cfg.Database,
 	)
 
-	logging.Info("instantiating oracle repository at %s:%s", cfg.Host, cfg.Port)
+	logging.Info("instantiating oracle repository at %s:%d", cfg.Host, cfg.Port)
 	sqlRepo, err := genericsql.NewGenericSqlRepository(cfg.RepoName, OracleDriver, cfg.Database, connStr)
 	if err != nil {
 		return nil, fmt.Errorf("could not instantiate generic sql repository: %w", err)

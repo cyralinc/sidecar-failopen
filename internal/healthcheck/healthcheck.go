@@ -22,6 +22,10 @@ func singleHealthCheck(ctx context.Context, sidecar repository.Repository, repo 
 	if sErr != nil { // in case the sidecar fails, we test the repo
 		logging.Debug("sidecar could not respond. error: %s", sErr.Error())
 		rErr = repo.Ping(ctx)
+		if rErr != nil {
+			logging.Debug("repository could not respond. error: %s", sErr.Error())
+
+		}
 	}
 
 	return sErr, rErr // returing both errors so that we can chech which failed
@@ -43,15 +47,15 @@ func HealthCheck(ctx context.Context, cfg *config.LambdaConfig) error {
 	for i := 0; i < cfg.NumberOfRetries; i++ {
 		sErr, rErr = singleHealthCheck(ctx, sidecar, repo)
 		if sErr == nil { // if the sidecar responded without an error, no retries are needed
-			logging.Debug("sidecar healthy, returning health check as healthy")
+			logging.Info("sidecar healthy, returning health check as healthy")
 			return nil
 		}
 	}
 	if rErr != nil { // if both the sidecar and the repository are failing, we don't trigger the fail open
-		logging.Debug("both sidecar and repo unhealthy. returning health check as healthy")
+		logging.Info("both sidecar and repo unhealthy. returning health check as healthy")
 		return nil
 	}
 
-	logging.Debug("sidecar unhealthy but repo healthy. return health check as unhealthy")
+	logging.Info("sidecar unhealthy but repo healthy. return health check as unhealthy")
 	return sErr
 }
