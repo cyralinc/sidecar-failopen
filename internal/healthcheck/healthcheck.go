@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
+	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/logging"
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository"
 )
 
@@ -19,6 +20,7 @@ func singleHealthCheck(ctx context.Context, sidecar repository.Repository, repo 
 
 	sErr = sidecar.Ping(ctx)
 	if sErr != nil { // in case the sidecar fails, we test the repo
+		logging.Debug("sidecar could not respond. error: %s", sErr.Error())
 		rErr = repo.Ping(ctx)
 	}
 
@@ -41,11 +43,15 @@ func HealthCheck(ctx context.Context, cfg *config.LambdaConfig) error {
 	for i := 0; i < cfg.NumberOfRetries; i++ {
 		sErr, rErr = singleHealthCheck(ctx, sidecar, repo)
 		if sErr == nil { // if the sidecar responded without an error, no retries are needed
+			logging.Debug("sidecar healthy, returning health check as healthy")
 			return nil
 		}
 	}
 	if rErr != nil { // if both the sidecar and the repository are failing, we don't trigger the fail open
+		logging.Debug("both sidecar and repo unhealthy. returning health check as healthy")
 		return nil
 	}
+
+	logging.Debug("sidecar unhealthy but repo healthy. return health check as unhealthy")
 	return sErr
 }
