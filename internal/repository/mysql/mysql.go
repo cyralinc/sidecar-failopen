@@ -10,6 +10,7 @@ import (
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/logging"
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository"
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository/genericsql"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // MySQL is the name registered by the driver.
