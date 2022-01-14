@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-var logger zap.SugaredLogger
+var logger *zap.SugaredLogger
 
 func Info(template string, args ...interface{}) {
 	defer logger.Sync()
@@ -44,12 +44,11 @@ func init() {
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.TimeKey = ""
 
-	logger := zap.New(zapcore.NewCore(
+	logger = zap.New(zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderCfg),
 		zapcore.Lock(os.Stdout),
 		atom,
-	))
-	defer logger.Sync()
+	)).Sugar()
 
 	atom.UnmarshalText([]byte(logLevel))
 

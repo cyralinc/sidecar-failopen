@@ -4,6 +4,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/secrets"
 	"github.com/spf13/viper"
@@ -59,8 +60,10 @@ var c *LambdaConfig
 // Config returns the global configuration for the lambda function, initializing
 // all values and recovering the secrets.
 func Config() *LambdaConfig {
+	secret := viper.GetString("repo_secret")
+	fmt.Printf("secret arn: %s", secret)
 	if c == nil {
-		sec, err := secrets.RepoSecretFromSecretsManager(context.Background(), viper.GetString("repo_secret"))
+		sec, err := secrets.RepoSecretFromSecretsManager(context.Background(), secret)
 		if err != nil {
 			panic(err)
 		}
