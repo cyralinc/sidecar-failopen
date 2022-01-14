@@ -30,7 +30,7 @@ var _ repository.Repository = (*oracleRepository)(nil)
 func NewOracleRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
 
 	connStr := fmt.Sprintf(
-		`user="%s" password="%s" connectString="%s:%s/%d"`,
+		`user="%s" password="%s" connectString="%s:%d/%s"`,
 		cfg.User,
 		cfg.Password,
 		cfg.Host,
