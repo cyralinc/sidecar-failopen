@@ -16,27 +16,12 @@ type RepoSecret struct {
 	Password string `json:"password"`
 }
 
-type CyralSecret struct {
-	ClientID     string `json:"client-id"`
-	ClientSecret string `json:"client-secret"`
-}
-
 func RepoSecretFromSecretsManager(ctx context.Context, secretARN string) (*RepoSecret, error) {
 	secretValue, err := getSecretsManagerValue(ctx, secretARN)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error getting secret from secrets manager: %s", err.Error())
 	}
 	retVal := &RepoSecret{}
-	err = json.Unmarshal([]byte(secretValue), retVal)
-	return retVal, err
-}
-
-func CyralSecretFromSecretsManager(ctx context.Context, secretARN string) (*CyralSecret, error) {
-	secretValue, err := getSecretsManagerValue(ctx, secretARN)
-	if err != nil {
-		return nil, err
-	}
-	retVal := &CyralSecret{}
 	err = json.Unmarshal([]byte(secretValue), retVal)
 	return retVal, err
 }
@@ -60,7 +45,7 @@ func getSecretsManagerValue(ctx context.Context, secretARN string) (string, erro
 		return "", err
 	}
 
-	return secretVal.String(), nil
+	return *secretVal.SecretString, nil
 }
 
 func getRegionFromSecretARN(secretARN string) (string, error) {
