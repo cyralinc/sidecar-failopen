@@ -83,7 +83,7 @@ certificate for this domain name to be added to the sidecar load balancer.
 
 # Failing Open or Closed
 
-##Failing Open
+## Failing Open
 
 In order to fail open and send traffic through the reverse proxy, complete the following steps:
 
