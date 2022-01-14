@@ -1,11 +1,10 @@
-# CloudFormation template for Cyral sidecar fail-open for AWS (snowflake repos)
+# Cyral sidecar fail-open for Snowflake
 
 ## Introduction
 
-This repository contains the CloudFormation template that deploys the Cyral sidecar fail-open feature for snowflake repos.
-This feature provides manual fail-open/fail-closed operation for a Cyral sidecar snowflake repository,
-allowing customers to keep existing databases reachable even when the Cyral sidecar experiences transient
-failures.
+This folder contains the CloudFormation template that deploys the Cyral sidecar fail-open feature for Snowflake repos
+in AWS sidecars. This feature provides manual fail-open/fail-closed operation for a Cyral sidecar Snowflake repository,
+allowing customers to keep Snowflake reachable even when the Cyral sidecar experiences transient failures.
 
 ![Cyral Sidecar Fail Open - Overview](../img/snowflake_fail_open_traffic.png)
 
@@ -29,24 +28,25 @@ be proxied through the nginx instance.
 
 # Limitations
 
-Some limitations apply to the operation of the fail-open feature, as described below.
+Some limitations apply to the operation of the fail-open feature for Snowflake, as described below.
 
 ## Native credentials required for BI tools connecting to Snowflake
-At this time, we do not support SSO based authentication between BI tools such as Looker and Tableau and Snowflake through
-the fail open nginx reverse proxy.
-
+At this time, SSO based authentication between BI tools such as Looker and Tableau are not supported.
 
 # Configuration
 
-## Nginx Reverse Proxy
-The nginx instance(s) is/are deployed as EC2 instances managed by an ASG for scaling purposes. The nginx default_server
-has been configured to run on port 8888 so that the load balancer can perform healthchecks against the EC2 server. If
-8888 is online, then nginx is up and therefore the server should be ready to handle requests. In addition to listening on
-port 8888, all reverse proxy traffic listens on port 443.
+## Fail-open reverse proxy
+
+In order to get the Cyral sidecar fail-open for Snowflake running, you need to deploy the Fail-open reverse proxy.
+
+The reverse proxy instance(s) is/are deployed as EC2 instances running Nginx managed by an ASG for scaling purposes.
+The nginx default_server has been configured to run on port 8888 so that the load balancer can perform healthchecks 
+against the EC2 instance. If 8888 is online, then nginx is up and therefore the server should be ready to handle 
+requests. In addition to listening on port 8888, all reverse proxy traffic listens on port 443.
 
 ### Configuration Steps
-You only need to deploy via CFT to get the instance online. The below table should help provide guidance on the values that
-should be used for each CFT Parameter.
+You only need to deploy the Cloudformation Template to get the instance online. The below table should help 
+provide guidance on the values that should be used for each CFT Parameter.
 
 | CFT Parameter         | Description                                                                                                                                                                                                                                                                                                                        | Example                                                       |
 |-----------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
@@ -81,11 +81,11 @@ certificate for this domain name to be added to the sidecar load balancer.
 7. Locate the certificate created in step 2 and place a check next to it
 8. Click the `Add` button to add the certificate 
 
-# Failing Open or Closed
+## Failing Open or Closed
 
-## Failing Open
+### Failing Open
 
-In order to fail open and send traffic through the reverse proxy, complete the following steps:
+In order to fail-open and send traffic through the reverse proxy, complete the following steps:
 
 1. Open the AWS EC2 console
 2. Locate the cyral sidecar loadbalancer
@@ -99,7 +99,7 @@ In order to fail open and send traffic through the reverse proxy, complete the f
 
 This will take about 0 - 90 seconds for the load balancer to register the changes.
 
-## Going back to the sidecar
+### Going back to the sidecar
 
 In order to move traffic back onto the sidecar, you would perform the same steps as Failing Open.
 The only difference is that you will be registering the sidecar instance(s) and deregistering the nginx
