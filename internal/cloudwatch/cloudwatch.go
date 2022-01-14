@@ -15,6 +15,7 @@ const dimensionFormat = "%s %s %s Health Check"
 const metricNameFormat = "%s-%s-%s: %s (Health Check for resource %s)"
 
 func logValue(value int) error {
+	namespace := "CyralSidecarHealthChecks"
 	cfg := config.Config()
 	metricName := fmt.Sprintf(metricNameFormat,
 		cfg.Sidecar.Host,
@@ -31,6 +32,7 @@ func logValue(value int) error {
 
 	_, err := client.PutMetricData(
 		&cloudwatch.PutMetricDataInput{
+			Namespace: &namespace,
 			MetricData: []*cloudwatch.MetricDatum{
 				{
 					MetricName: &metricName,
