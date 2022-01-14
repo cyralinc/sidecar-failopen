@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
 )
@@ -53,4 +54,9 @@ func LogHealthy(ctx context.Context) error {
 
 func LogUnhealthy(ctx context.Context) error {
 	return logValue(0)
+}
+
+func init() {
+	mySession := session.Must(session.NewSession())
+	client = cloudwatch.New(mySession)
 }
