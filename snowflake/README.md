@@ -27,15 +27,24 @@ be proxied through the nginx instance.
 ![Cyral Sidecar Fail Open - Failure non-browser](../img/snowflake_fail_open_nonbrowser-flows.png)
 ![Cyral Sidecar Fail Open - Failure browser](../img/snowflake_fail_open_browser-flows.png)
 
-## Configuration
+# Limitations
 
-### Nginx Reverse Proxy
+Some limitations apply to the operation of the fail-open feature, as described below.
+
+## Native credentials required for BI tools connecting to Snowflake
+At this time, we do not support SSO based authentication between BI tools such as Looker and Tableau and Snowflake through
+the fail open nginx reverse proxy.
+
+
+# Configuration
+
+## Nginx Reverse Proxy
 The nginx instance(s) is/are deployed as EC2 instances managed by an ASG for scaling purposes. The nginx default_server
 has been configured to run on port 8888 so that the load balancer can perform healthchecks against the EC2 server. If
 8888 is online, then nginx is up and therefore the server should be ready to handle requests. In addition to listening on
 port 8888, all reverse proxy traffic listens on port 443.
 
-#### Configuration Steps
+### Configuration Steps
 You only need to deploy via CFT to get the instance online. The below table should help provide guidance on the values that
 should be used for each CFT Parameter.
 
@@ -55,13 +64,13 @@ should be used for each CFT Parameter.
 | SnowFlakeAccountName  | This should just be the account name for the customer’s snowflake instance                                                                                                                                                                                                                                                         | xx#####                                                       |
 | Subnets               | This should be the same subnet(s) where the Cyral sidecar belongs                                                                                                                                                                                                                                                                  | subnet-000XXX                                                 |
 
-### Sidecar Load Balancer (Optional)
+## Sidecar Load Balancer (Optional)
 In addition to the sidecar load balancers existing certificates, an additional certificate for
 `<snowflake_account_name>.customer.sidecar.domain` is required for customers that will be using some BI tools like Tableau
 to connect through the fail open reverse proxy. For those customers, complete these configuration steps to generate a new
 certificate for this domain name to be added to the sidecar load balancer.
 
-#### Configuration Steps
+### Configuration Steps
 
 1. Open the AWS Certificate Manager
 2. Create a new certificate for `<snowflake_account_name>.customer.sidecar.domain`
@@ -72,9 +81,9 @@ certificate for this domain name to be added to the sidecar load balancer.
 7. Locate the certificate created in step 2 and place a check next to it
 8. Click the `Add` button to add the certificate 
 
-## Failing Open or Closed
+# Failing Open or Closed
 
-###Failing Open
+##Failing Open
 
 In order to fail open and send traffic through the reverse proxy, complete the following steps:
 
@@ -90,10 +99,8 @@ In order to fail open and send traffic through the reverse proxy, complete the f
 
 This will take about 0 - 90 seconds for the load balancer to register the changes.
 
-### Going back to the sidecar
+## Going back to the sidecar
 
 In order to move traffic back onto the sidecar, you would perform the same steps as Failing Open.
 The only difference is that you will be registering the sidecar instance(s) and deregistering the nginx
 reverse proxy instance(s).
-
-
