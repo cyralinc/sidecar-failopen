@@ -35,7 +35,7 @@ Some limitations apply to the operation of the fail-open feature, as described b
 | PostgreSQL    |
 | Snowflake*    |
 
-MySQL, Oracle and PostgreSQL are supported in the current version of [the CFT](./cft_sidecar_failopen.yaml).
+MySQL, Oracle and PostgreSQL are supported in the current version of [the CFT](./templates/cft_sidecar_failopen.yaml).
 
 Click [here for Snowflake support](./snowflake) and follow the instructions.
 
@@ -75,7 +75,7 @@ one lambda will be deployed for each sidecar/repository endpoint pair.
 
 The stack can be deployed to CloudFormation via AWS Console or AWS CLI. All the necessary parameters
 and detailed information on each of them are shown in the `Parameters` section of the
-[CloudFormation Template](./cft_sidecar_failopen.yaml). Before you deploy, read the entire
+[CloudFormation Template](./templates/cft_sidecar_failopen.yaml). Before you deploy, read the entire
 [Deployment Pre-Requisites](#deployment-pre-prequisites) section and make sure you have all of them
 ready before you give it a go.
 
