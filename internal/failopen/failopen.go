@@ -7,9 +7,12 @@ import (
 	"github.com/cyralinc/sidecar-failopen/internal/config"
 	"github.com/cyralinc/sidecar-failopen/internal/healthcheck"
 	"github.com/cyralinc/sidecar-failopen/internal/logging"
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/denodo"
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/mariadb"
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/mysql"
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/oracle"
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/postgresql"
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/redshift"
 )
 
 func Run(ctx context.Context) error {
