@@ -40,9 +40,7 @@ func init() {
 	logLevel := viper.GetString("log_level")
 	atom := zap.NewAtomicLevel()
 
-	// To keep the example deterministic, disable timestamps in the output.
 	encoderCfg := zap.NewProductionEncoderConfig()
-	encoderCfg.TimeKey = ""
 
 	logger = zap.New(zapcore.NewCore(
 		zapcore.NewJSONEncoder(encoderCfg),
