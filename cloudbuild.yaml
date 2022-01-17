@@ -52,9 +52,6 @@ steps:
 
   # Run unit tests
   - name: golang
-    env:
-      - "PROJECT_ROOT=github.com/cyralinc/offline-data-classifier-go"
-      - "GO111MODULE=on"
     args:
       - make
       - test
@@ -68,8 +65,6 @@ steps:
 
   # Run security tests
   - name: securego/gosec
-    env:
-      - "GO111MODULE=on"
     args:
       - -no-fail
       - ./...
@@ -81,8 +76,6 @@ steps:
 
   # Run lint
   - name: golangci/golangci-lint
-    env:
-      - "GO111MODULE=on"
     args:
       - golangci-lint
       - run
@@ -97,10 +90,6 @@ steps:
   # Build repo failopen binary
   - name: golang:1.17
     entrypoint: "make"
-    env:
-      - "PROJECT_ROOT=github.com/cyralinc/offline-data-classifier-go"
-      - "GO111MODULE=on"
-      - "GOBIN=/workspace/bin"
     args:
       - "build"
     volumes:
