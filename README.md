@@ -68,7 +68,7 @@ if the CNAME moves from `sidecar.db.acme.com` to `mysql-01.db.acme.com` and vice
 ## Deployment
 
 One health check must be deployed [per CNAME](#dns-cname), thus
-one lambda will be deployed for each sidecar/repository pair.
+one lambda will be deployed for each sidecar/repository endpoint pair.
 
 
 # Stack deployment
