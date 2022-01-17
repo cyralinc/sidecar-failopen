@@ -23,7 +23,7 @@ func logValue(value float64) error {
 		cfg.Repo.Host,
 		cfg.StackName,
 		cfg.Sidecar.Host)
-	dimentionName := fmt.Sprintf(dimensionFormat,
+	dimensionName := fmt.Sprintf(dimensionFormat,
 		cfg.Sidecar.Host,
 		cfg.Repo.RepoType,
 		cfg.Repo.Host,
@@ -37,8 +37,8 @@ func logValue(value float64) error {
 					MetricName: &metricName,
 					Dimensions: []*cloudwatch.Dimension{
 						{
-							Name:  &dimentionName,
-							Value: &dimentionName,
+							Name:  &dimensionName,
+							Value: &dimensionName,
 						},
 					},
 					Value: &value,
