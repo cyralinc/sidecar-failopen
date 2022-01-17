@@ -3,7 +3,9 @@
 package keys
 
 const (
-	MySQLRepoKey  = "mysql"
-	PGRepoKey     = "postgresql"
-	OracleRepoKey = "oracle"
+	DenodoRepoKey   = "denodo"
+	MySQLRepoKey    = "mysql"
+	OracleRepoKey   = "oracle"
+	PGRepoKey       = "postgresql"
+	RedshiftRepoKey = "redshift"
 )
