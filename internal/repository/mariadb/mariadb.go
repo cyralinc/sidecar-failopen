@@ -33,7 +33,7 @@ func NewMariaDBRepository(_ context.Context, cfg config.RepoConfig) (repository.
 		cfg.Port,
 		cfg.Database,
 	)
-	logging.Info("instantiating mysql repository at %s:%d", cfg.Host, cfg.Port)
+	logging.Info("instantiating mariadb repository at %s:%d", cfg.Host, cfg.Port)
 
 	sqlRepo, err := genericsql.NewGenericSqlRepository(cfg.RepoName, MySQL, cfg.Database, connStr)
 	if err != nil {

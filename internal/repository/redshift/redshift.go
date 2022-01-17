@@ -37,7 +37,7 @@ func NewRedshiftRepository(_ context.Context, cfg config.RepoConfig) (repository
 		cfg.Database,
 	)
 
-	logging.Info("instantiating postgres repository at %s:%d", cfg.Host, cfg.Port)
+	logging.Info("instantiating redshift repository at %s:%d", cfg.Host, cfg.Port)
 
 	sqlRepo, err := genericsql.NewGenericSqlRepository(cfg.RepoName, PostgreSQL, cfg.Database, connStr)
 	if err != nil {
