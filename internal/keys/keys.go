@@ -4,6 +4,7 @@ package keys
 
 const (
 	DenodoRepoKey   = "denodo"
+	MariaDBRepoKey  = "mariadb"
 	MySQLRepoKey    = "mysql"
 	OracleRepoKey   = "oracle"
 	PGRepoKey       = "postgresql"
