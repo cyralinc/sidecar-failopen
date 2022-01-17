@@ -1,0 +1,143 @@
+steps:
+  # Download the cicd key
+  - name: "gcr.io/cloud-builders/gsutil"
+    args:
+      - cp
+      - gs://cyral-keys/cicd_key.enc
+      - ./id_cicd.enc
+    id: "get-cicd-key"
+
+  # Decrypt the cicd key
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      - kms
+      - decrypt
+      - --ciphertext-file=id_cicd.enc
+      - --plaintext-file=/root/.ssh/id_rsa
+      - --location=global
+      - --keyring=github-keyring
+      - --key=github-key
+    id: "decrypt-cicd-key"
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+# Set up git with key and domain.
+  - name: "gcr.io/cloud-builders/git"
+    entrypoint: "bash"
+    args:
+      - "-c"
+      - |
+        chmod 600 /root/.ssh/id_rsa
+        cat <<EOF >/root/.ssh/config
+          Hostname github.com
+          IdentityFile /root/.ssh/id_rsa
+          StrictHostKeyChecking no
+        EOF
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+    id: "ssh-config"
+
+  # Ask git to use ssh instead of https
+  - name: "gcr.io/cloud-builders/git"
+    args:
+      - config
+      - --global
+      - url.git@github.com:.insteadOf
+      - https://github.com/
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+    id: "git-config"
+
+  # Run unit tests
+  - name: golang
+    args:
+      - make
+      - test
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+      - name: "go-modules"
+        path: /go
+    id: "unit-tests"
+    waitFor: ["git-config"]
+
+  # Run security tests
+  - name: securego/gosec
+    args:
+      - -no-fail
+      - ./...
+    volumes:
+      - name: "go-modules"
+        path: /go
+    id: "security-tests"
+    waitFor: ["unit-tests"]
+
+  # Run lint
+  - name: golangci/golangci-lint
+    args:
+      - golangci-lint
+      - run
+      - --issues-exit-code=0
+      - --timeout=5m
+    volumes:
+      - name: "go-modules"
+        path: /go
+    id: "run lint"
+    waitFor: ["unit-tests"]
+
+  # Build repo failopen binary
+  - name: golang:1.17
+    entrypoint: "make"
+    args:
+      - "build"
+    volumes:
+      - name: "ssh"
+        path: /root/.ssh
+      - name: "go-modules"
+        path: /go
+    id: "build-binary"
+    waitFor: ["unit-tests"]
+
+  # Build Lambda zip file
+  - name: debian:latest
+    entrypoint: "bash"
+    id: "build-lambda-zip"
+    args:
+      - "-c"
+      - |
+        set -e
+        apt update -y
+        apt-get install -y zip wget libaio1
+        client=instantclient_21_4
+        wget 'https://download.oracle.com/otn_software/linux/instantclient/214000/instantclient-basiclite-linux.x64-21.4.0.0.0dbru.zip' -O $client.zip
+        unzip $client.zip
+        cp $(readlink -f /usr/lib/x86_64-linux-gnu/libaio.so.1) $client/libaio.so.1
+        mv $client /workspace/oracle-client_21_4
+        zip -ry fail-open-lambda.zip failopen oracle-client_21_4
+    waitFor: [ "build-binary" ]
+
+  - name: "amazon/aws-cli"
+    id: "upload-us-east-1"
+    entrypoint: "scripts/publish.sh"
+    env:
+      - "BUCKET=cyral-dev-artifacts"
+      - "BUCKET_KEY_PREFIX=fail-open"
+      - "VERSION=$BUILD_ID"
+      - "APPEND_REGION=false"
+    args:
+      - us-east-1
+    waitFor: ["build-lambda-zip"]
+    secretEnv: [AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY]
+
+
+availableSecrets:
+  secretManager:
+    - versionName: projects/cyral-dev/secrets/github-aws-private-key-secret/versions/1
+      env: AWS_SECRET_ACCESS_KEY
+    - versionName: projects/cyral-dev/secrets/github-aws-private-key-id/versions/1
+      env: AWS_ACCESS_KEY_ID
+
+options:
+  machineType: "E2_HIGHCPU_8"
