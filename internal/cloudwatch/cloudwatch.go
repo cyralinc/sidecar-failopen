@@ -6,7 +6,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
+	"github.com/cyralinc/sidecar-failopen/internal/config"
 )
 
 var client *cloudwatch.CloudWatch

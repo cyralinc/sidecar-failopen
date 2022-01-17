@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
+	"github.com/cyralinc/sidecar-failopen/internal/config"
 )
 
 type Repository interface {

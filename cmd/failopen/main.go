@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/failopen"
+	"github.com/cyralinc/sidecar-failopen/internal/failopen"
 )
 
 // main could be a simple call `lambda.Start(<handler>)`. However, to avoid

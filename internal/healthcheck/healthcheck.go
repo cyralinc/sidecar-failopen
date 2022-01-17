@@ -8,9 +8,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/logging"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository"
+	"github.com/cyralinc/sidecar-failopen/internal/config"
+	"github.com/cyralinc/sidecar-failopen/internal/logging"
+	"github.com/cyralinc/sidecar-failopen/internal/repository"
 )
 
 func singleHealthCheck(ctx context.Context, sidecar repository.Repository, repo repository.Repository) (sErr, rErr error) {

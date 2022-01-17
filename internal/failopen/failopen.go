@@ -3,13 +3,13 @@ package failopen
 import (
 	"context"
 
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/cloudwatch"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/healthcheck"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/logging"
-	_ "github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository/mysql"
-	_ "github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository/oracle"
-	_ "github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository/postgresql"
+	"github.com/cyralinc/sidecar-failopen/internal/cloudwatch"
+	"github.com/cyralinc/sidecar-failopen/internal/config"
+	"github.com/cyralinc/sidecar-failopen/internal/healthcheck"
+	"github.com/cyralinc/sidecar-failopen/internal/logging"
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/mysql"
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/oracle"
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/postgresql"
 )
 
 func Run(ctx context.Context) error {

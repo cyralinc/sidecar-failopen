@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/config"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/keys"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/logging"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository"
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/repository/genericsql"
+	"github.com/cyralinc/sidecar-failopen/internal/config"
+	"github.com/cyralinc/sidecar-failopen/internal/keys"
+	"github.com/cyralinc/sidecar-failopen/internal/logging"
+	"github.com/cyralinc/sidecar-failopen/internal/repository"
+	"github.com/cyralinc/sidecar-failopen/internal/repository/genericsql"
 
 	// Oracle DB driver
 	_ "github.com/godror/godror"

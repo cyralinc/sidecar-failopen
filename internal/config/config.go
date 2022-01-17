@@ -5,7 +5,7 @@ package config
 import (
 	"context"
 
-	"github.com/cyralinc/cloudformation-sidecar-failopen/internal/secrets"
+	"github.com/cyralinc/sidecar-failopen/internal/secrets"
 	"github.com/spf13/viper"
 )
 

@@ -1,4 +1,4 @@
-module github.com/cyralinc/cloudformation-sidecar-failopen
+module github.com/cyralinc/sidecar-failopen
 
 go 1.17
 
