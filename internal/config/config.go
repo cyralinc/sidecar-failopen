@@ -53,6 +53,8 @@ func init() {
 	viper.BindEnv("log_level") // log level for the lambda
 
 	viper.BindEnv("cf_stack_name") // name of the stack
+
+	viper.BindEnv("pg_conn_opts") // connection options for pg based repos
 }
 
 var c *LambdaConfig
