@@ -28,6 +28,8 @@ type denodoRepository struct {
 var _ repository.Repository = (*denodoRepository)(nil)
 
 func NewDenodoRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
+	parsedOpts := util.ParseOptString(cfg)
+	logging.Debug("using connection string opts: %s", parsedOpts)
 
 	connStr := fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s%s",
@@ -36,7 +38,7 @@ func NewDenodoRepository(_ context.Context, cfg config.RepoConfig) (repository.R
 		cfg.Host,
 		cfg.Port,
 		cfg.Database,
-		util.ParseOptString(cfg),
+		parsedOpts,
 	)
 
 	logging.Info("instantiating denodo repository at %s:%d", cfg.Host, cfg.Port)

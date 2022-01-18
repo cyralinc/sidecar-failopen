@@ -29,6 +29,9 @@ var _ repository.Repository = (*redshiftRepository)(nil)
 
 func NewRedshiftRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
 
+	parsedOpts := util.ParseOptString(cfg)
+	logging.Debug("using connection string opts: %s", parsedOpts)
+
 	connStr := fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s%s",
 		cfg.User,
@@ -36,7 +39,7 @@ func NewRedshiftRepository(_ context.Context, cfg config.RepoConfig) (repository
 		cfg.Host,
 		cfg.Port,
 		cfg.Database,
-		util.ParseOptString(cfg),
+		parsedOpts,
 	)
 
 	logging.Info("instantiating redshift repository at %s:%d", cfg.Host, cfg.Port)
