@@ -18,7 +18,7 @@ const MySQL = "mysql"
 type mySqlRepository struct {
 	// The majority of the repository.Repository functionality is delegated to
 	// a generic SQL repository instance (genericSqlRepo).
-	genericSqlRepo *genericsql.GenericSqlRepository
+	*genericsql.GenericSqlRepository
 }
 
 // *mySqlRepository implements repository.Repository
@@ -41,20 +41,8 @@ func NewMySQLRepository(repoType string) func(_ context.Context, cfg config.Repo
 			return nil, fmt.Errorf("could not instantiate generic sql repository: %w", err)
 		}
 
-		return &mySqlRepository{genericSqlRepo: sqlRepo}, nil
+		return &mySqlRepository{GenericSqlRepository: sqlRepo}, nil
 	}
-}
-
-func (repo *mySqlRepository) Ping(ctx context.Context) error {
-	return repo.genericSqlRepo.Ping(ctx)
-}
-
-func (repo *mySqlRepository) Close() error {
-	return repo.genericSqlRepo.Close()
-}
-
-func (repo *mySqlRepository) Type() string {
-	return keys.MySQLRepoKey
 }
 
 func init() {

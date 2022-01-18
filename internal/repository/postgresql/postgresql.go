@@ -21,8 +21,8 @@ const PostgreSQL = "postgres"
 type postgresqlRepository struct {
 	// The majority of the repository.Repository functionality is delegated to
 	// a generic SQL repository instance (genericSqlRepo).
-	genericSqlRepo *genericsql.GenericSqlRepository
-	repoType       string
+	*genericsql.GenericSqlRepository
+	repoType string
 }
 
 // *postgresqlRepository implements repository.Repository
@@ -52,20 +52,8 @@ func NewPostgresqlRepository(repoType string) func(context.Context, config.RepoC
 			return nil, fmt.Errorf("could not instantiate generic sql repository: %w", err)
 		}
 
-		return &postgresqlRepository{genericSqlRepo: sqlRepo, repoType: repoType}, nil
+		return &postgresqlRepository{GenericSqlRepository: sqlRepo, repoType: repoType}, nil
 	}
-}
-
-func (repo *postgresqlRepository) Ping(ctx context.Context) error {
-	return repo.genericSqlRepo.Ping(ctx)
-}
-
-func (repo *postgresqlRepository) Close() error {
-	return repo.genericSqlRepo.Close()
-}
-
-func (repo *postgresqlRepository) Type() string {
-	return repo.repoType
 }
 
 func init() {
