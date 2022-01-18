@@ -7,12 +7,14 @@ import (
 	"github.com/cyralinc/sidecar-failopen/internal/config"
 	"github.com/cyralinc/sidecar-failopen/internal/healthcheck"
 	"github.com/cyralinc/sidecar-failopen/internal/logging"
-	_ "github.com/cyralinc/sidecar-failopen/internal/repository/denodo"
-	_ "github.com/cyralinc/sidecar-failopen/internal/repository/mariadb"
+
+	// registering drivers for the healthcheck
+	// mysql covers mysql and mariadb
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/mysql"
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/oracle"
+
+	// pg covers postgresql, denodo and redshift
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/postgresql"
-	_ "github.com/cyralinc/sidecar-failopen/internal/repository/redshift"
 )
 
 func Run(ctx context.Context) error {
