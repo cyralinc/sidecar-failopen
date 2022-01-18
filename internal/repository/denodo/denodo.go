@@ -9,6 +9,7 @@ import (
 	"github.com/cyralinc/sidecar-failopen/internal/logging"
 	"github.com/cyralinc/sidecar-failopen/internal/repository"
 	"github.com/cyralinc/sidecar-failopen/internal/repository/genericsql"
+	"github.com/cyralinc/sidecar-failopen/internal/repository/postgresql/util"
 
 	// Postgresql DB driver
 	_ "github.com/lib/pq"
@@ -29,12 +30,13 @@ var _ repository.Repository = (*denodoRepository)(nil)
 func NewDenodoRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
 
 	connStr := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%d/%s",
+		"postgresql://%s:%s@%s:%d/%s%s",
 		cfg.User,
 		cfg.Password,
 		cfg.Host,
 		cfg.Port,
 		cfg.Database,
+		util.ParseOptString(cfg),
 	)
 
 	logging.Info("instantiating denodo repository at %s:%d", cfg.Host, cfg.Port)
