@@ -23,7 +23,7 @@ func singleHealthCheck(ctx context.Context, sidecar repository.Repository, repo 
 		logging.Debug("sidecar could not respond. error: %s", sErr.Error())
 		rErr = repo.Ping(ctx)
 		if rErr != nil {
-			logging.Debug("repository could not respond. error: %s", sErr.Error())
+			logging.Debug("repository could not respond. error: %s", rErr.Error())
 
 		}
 	}

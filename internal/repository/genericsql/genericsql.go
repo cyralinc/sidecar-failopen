@@ -70,7 +70,7 @@ func (repo *GenericSqlRepository) Close() error {
 	return repo.db.Close()
 }
 func (repo *GenericSqlRepository) Type() string {
-	return "genericsql"
+	return repo.repoType
 }
 
 func getDbHandle(repoType, connStr string) (*sql.DB, error) {

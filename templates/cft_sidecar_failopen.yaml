@@ -32,6 +32,10 @@ Metadata:
           - NumberOfRetries
           - LogLevel
       - Label:
+          default: PostgreSQL based repositories specific configurations
+        Parameters:
+          - PostgreSQLConnectionOpts
+      - Label:
           default: Networking and Lambda configuration
         Parameters:
           - VPC
@@ -53,7 +57,7 @@ Parameters:
   RepoType:
     Type: String
     Description: "The type of the repository that the health check will connect to."
-    AllowedValues: [mysql, postgresql, oracle]
+    AllowedValues: [denodo, mariadb, mysql, oracle, postgresql, redshift]
   RepoSecretArn:
     Type: String
     Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."
@@ -104,6 +108,11 @@ Parameters:
     AllowedValues: [DEBUG, INFO, WARNING, ERROR, FATAL]
     Default: INFO
     Description: Level of the logging of the lambda function.
+
+  PostgreSQLConnectionOpts:
+    Type: String
+    AllowedPattern: "([^=,]+=[^=,]*(,[^=,]+=[^=,]*)*){0,1}"
+    Description: Connection string options for PostgreSQL based repositories (denodo, redshift, postgresql). Leave empty if not PostgreSQL based.
 
   HostedZoneID:
     Type: AWS::Route53::HostedZone::Id
@@ -258,6 +267,8 @@ Resources:
           FAIL_OPEN_REPO_HOST: !Ref RepoHost
           FAIL_OPEN_N_RETRIES: !Sub "${NumberOfRetries}"
           FAIL_OPEN_LOG_LEVEL: !Ref LogLevel
+
+          FAIL_OPEN_PG_CONN_OPTS: !Ref PostgreSQLConnectionOpts
           # adding oracle client path so that oracle client works
           LD_LIBRARY_PATH: 'oracle-client_21_4'
 

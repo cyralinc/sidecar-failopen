@@ -21,7 +21,7 @@ const (
 type oracleRepository struct {
 	// The majority of the repository.Repository functionality is delegated to
 	// a generic SQL repository instance (genericSqlRepo).
-	genericSqlRepo *genericsql.GenericSqlRepository
+	*genericsql.GenericSqlRepository
 }
 
 // *oracleRepository implements repository.Repository
@@ -44,7 +44,7 @@ func NewOracleRepository(_ context.Context, cfg config.RepoConfig) (repository.R
 		return nil, fmt.Errorf("could not instantiate generic sql repository: %w", err)
 	}
 
-	return &oracleRepository{genericSqlRepo: sqlRepo}, nil
+	return &oracleRepository{GenericSqlRepository: sqlRepo}, nil
 }
 
 // Ping verifies the connection to Oracle database used by this Repository.
@@ -54,15 +54,7 @@ func NewOracleRepository(_ context.Context, cfg config.RepoConfig) (repository.R
 // like this. So instead, we defer to the native Ping method implemented by the
 // Oracle sql.DB driver.
 func (repo *oracleRepository) Ping(ctx context.Context) error {
-	return repo.genericSqlRepo.GetDb().PingContext(ctx)
-}
-
-func (repo *oracleRepository) Close() error {
-	return repo.genericSqlRepo.Close()
-}
-
-func (repo *oracleRepository) Type() string {
-	return keys.OracleRepoKey
+	return repo.GetDb().PingContext(ctx)
 }
 
 func init() {

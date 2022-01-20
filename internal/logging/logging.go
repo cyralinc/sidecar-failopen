@@ -3,8 +3,6 @@ package logging
 import (
 	"os"
 
-	_ "github.com/cyralinc/sidecar-failopen/internal/config"
-	"github.com/spf13/viper"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -36,8 +34,7 @@ func Debug(template string, args ...interface{}) {
 	logger.Debugf(template, args...)
 }
 
-func init() {
-	logLevel := viper.GetString("log_level")
+func Init(logLevel string) {
 	atom := zap.NewAtomicLevel()
 
 	encoderCfg := zap.NewProductionEncoderConfig()
@@ -49,5 +46,4 @@ func init() {
 	)).Sugar()
 
 	atom.UnmarshalText([]byte(logLevel))
-
 }

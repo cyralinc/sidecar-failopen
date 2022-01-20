@@ -12,13 +12,14 @@ import (
 // RepoConfig is the configuration for a repository, including
 // connection information and metadata.
 type RepoConfig struct {
-	Host     string
-	Port     int
-	User     string
-	Password string
-	Database string
-	RepoName string
-	RepoType string
+	Host            string
+	Port            int
+	User            string
+	Password        string
+	Database        string
+	RepoName        string
+	RepoType        string
+	PGStringOptions string
 }
 
 // LambdaConfig is the configuration for the lambda in general. This
@@ -52,6 +53,8 @@ func init() {
 	viper.BindEnv("log_level") // log level for the lambda
 
 	viper.BindEnv("cf_stack_name") // name of the stack
+
+	viper.BindEnv("pg_conn_opts") // connection options for pg based repos
 }
 
 var c *LambdaConfig
@@ -70,22 +73,24 @@ func Config() *LambdaConfig {
 			NumberOfRetries: viper.GetInt("n_retries"),
 			LogLevel:        viper.GetString("log_level"),
 			Repo: RepoConfig{
-				Host:     viper.GetString("repo_host"),
-				Port:     viper.GetInt("repo_port"),
-				Database: viper.GetString("repo_database"),
-				RepoType: viper.GetString("repo_type"),
-				RepoName: viper.GetString("repo_name"),
-				User:     sec.Username,
-				Password: sec.Password,
+				Host:            viper.GetString("repo_host"),
+				Port:            viper.GetInt("repo_port"),
+				Database:        viper.GetString("repo_database"),
+				RepoType:        viper.GetString("repo_type"),
+				RepoName:        viper.GetString("repo_name"),
+				User:            sec.Username,
+				Password:        sec.Password,
+				PGStringOptions: viper.GetString("pg_conn_opts"),
 			},
 			Sidecar: RepoConfig{
-				Host:     viper.GetString("sidecar_host"),
-				Port:     viper.GetInt("sidecar_port"),
-				Database: viper.GetString("repo_database"),
-				RepoType: viper.GetString("repo_type"),
-				RepoName: viper.GetString("repo_name"),
-				User:     sec.Username,
-				Password: sec.Password,
+				Host:            viper.GetString("sidecar_host"),
+				Port:            viper.GetInt("sidecar_port"),
+				Database:        viper.GetString("repo_database"),
+				RepoType:        viper.GetString("repo_type"),
+				RepoName:        viper.GetString("repo_name"),
+				User:            sec.Username,
+				Password:        sec.Password,
+				PGStringOptions: viper.GetString("pg_conn_opts"),
 			},
 			StackName: viper.GetString("cf_stack_name"),
 		}

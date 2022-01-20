@@ -14,9 +14,8 @@ var client *cloudwatch.CloudWatch
 const dimensionFormat = "%s %s %s Health Check"
 const metricNameFormat = "%s-%s-%s: %s (Health Check for resource %s)"
 
-func logValue(value float64) error {
+func logValue(value float64, cfg *config.LambdaConfig) error {
 	namespace := "CyralSidecarHealthChecks"
-	cfg := config.Config()
 	metricName := fmt.Sprintf(metricNameFormat,
 		cfg.Sidecar.Host,
 		cfg.Repo.RepoType,
@@ -50,12 +49,12 @@ func logValue(value float64) error {
 	return err
 }
 
-func LogHealthy(ctx context.Context) error {
-	return logValue(1)
+func LogHealthy(ctx context.Context, cfg *config.LambdaConfig) error {
+	return logValue(1, cfg)
 }
 
-func LogUnhealthy(ctx context.Context) error {
-	return logValue(0)
+func LogUnhealthy(ctx context.Context, cfg *config.LambdaConfig) error {
+	return logValue(0, cfg)
 }
 
 func init() {
