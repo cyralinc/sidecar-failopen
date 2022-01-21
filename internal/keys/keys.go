@@ -9,5 +9,6 @@ const (
 	OracleRepoKey    = "oracle"
 	PGRepoKey        = "postgresql"
 	RedshiftRepoKey  = "redshift"
+	SnowflakeRepoKey = "snowflake"
 	SQLServerRepoKey = "sqlserver"
 )

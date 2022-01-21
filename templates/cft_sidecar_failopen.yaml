@@ -33,15 +33,40 @@ Metadata:
           - NumberOfRetries
           - LogLevel
       - Label:
+<<<<<<< HEAD
           default: Networking and Lambda configuration
+||||||| parent of 27545c8 (Starts development of snowflake support in main cft)
+          default: PostgreSQL based repositories specific configurations
         Parameters:
-          - VPC
-          - Subnets
+          - PostgreSQLConnectionOpts
       - Label:
-          default: Trigger configuration
+          default: Networking and Lambda configuration
+=======
+          default: PostgreSQL based repositories specific configurations
         Parameters:
-          - ConsecutiveFailuresForTrigger
-          - ScheduleExpression
+          - PostgreSQLConnectionOpts
+      - Label:
+          default: Snowflake specific configurations
+>>>>>>> 27545c8 (Starts development of snowflake support in main cft)
+        Parameters:
+          - SnowflakeRole
+          - SnowflakeAccount
+          - SnowflakeWarehouse
+      - Label:
+          default: Snowflake NGINX proxy configuration (leave empty if not configuring a snowflake repository)
+        Parameters:
+          - SnowflakeNGINXProxyAsgMax
+          - SnowflakeNGINXProxyAsgMin
+          - SnowflakeNGINXProxyAsgDesired
+          - SnowflakeNGINXProxySubnets
+          - SnowflakeNGINXProxySSHKeyName
+          - SnowflakeNGINXProxyInstanceType
+          - SnowflakeNGINXProxyInstanceSecurityGroup
+          - SnowflakeNGINXProxyLoadBalancerScheme
+          - SnowflakeNGINXProxyLoadBalancerCertificateArn
+          - SnowflakeNGINXProxyAmiId
+          - SidecarDomainName
+          - SidecarNamePrefix
 
 Parameters:
   SidecarHost:
@@ -80,7 +105,7 @@ Parameters:
   VPC:
     Type: AWS::EC2::VPC::Id
     Description: "The VPC the lambda will be attached to."
-  Subnets:
+  LambdaSubnets:
     Type: List<AWS::EC2::Subnet::Id>
     Description: |
       The subnets the lambda will be deployed to. All subnets must be able to reach both the sidecar and the repository.
@@ -111,6 +136,71 @@ Parameters:
     AllowedPattern: "([^=,]+=[^=,]*(,[^=,]+=[^=,]*)*){0,1}"
     Description: Connection string options for the string. Comma separated list of key=value pairs
 
+  # Snowflake Configuration
+  SnowflakeAccount:
+    Type: String
+    Description: "The Snowflake account. Omit if not configuring a Snowflake repo."
+  SnowflakeRole:
+    Type: String
+    Description: "The Snowflake role. Omit if not configuring a Snowflake repo."
+  SnowflakeWarehouse:
+    Type: String
+    Description: "The Snowflake warehouse. Omit if not configuring a Snowflake repo."
+
+  SnowflakeNGINXProxyAsgMax:
+    Description: "The maximum number of hosts to create in the auto scaling group"
+    Type: "String"
+    Default: "2"
+    AllowedPattern: "[0-9]+"
+  SnowflakeNGINXProxyAsgMin:
+    Description: "The minimum number of hosts to create in the auto autoscaling group"
+    Type: "String"
+    Default: "1"
+    AllowedPattern: "[0-9]+"
+  SnowflakeNGINXProxyAsgDesired:
+    Description: "The desired number of hosts to create in the auto scaling group"
+    Type: "String"
+    Default: "1"
+    AllowedPattern: "[0-9]+"
+  SnowflakeNGINXProxySubnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: "The subnets the EC2 instances will be deployed to. All subnets must be able to reach both the sidecar and the repository."
+  SnowflakeNGINXProxySSHKeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the EC2 instances.
+    Default: AWS_Key
+  SnowflakeNGINXProxyInstanceType:
+    AllowedValues:
+      [t3.nano, t3.micro, t3.small, t3.medium, t3.large, t3.xlarge, m5.large, m5.xlarge, c5.large, c5.xlarge, r5.large, r5.xlarge]
+    Default: t3.medium
+    Description: Amazon EC2 instance type for the EC2 instances
+    Type: String
+  SnowflakeNGINXProxyInstanceSecurityGroup:
+    Description: "List of Security Group IDs"
+    Type: List<AWS::EC2::SecurityGroup::Id>
+  SnowflakeNGINXProxyLoadBalancerScheme:
+    Description: "EC2 network load balancer scheme ('internal' or 'internet-facing')"
+    Type: String
+    AllowedValues: ['internal', 'internet-facing']
+    Default: 'internet-facing'
+    ConstraintDescription: must specify 'internal' or 'internet-facing'.
+  SnowflakeNGINXProxyLoadBalancerCertificateArn:
+    Type: String
+    Description: (Optional) ARN of SSL certificate that will be used for client connections to Snowflake.
+    Default: ""
+  SnowflakeNGINXProxyAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Description: "Amazon Linux 2 AMI ID for sidecar EC2 instances. The default behavior is to use the latest version.
+      In order to define a new image, replace 'recommended' by the desired image name (eg 'amzn2-ami-ecs-hvm-2.0.20181112-x86_64-ebs')."
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  ProxySidecarDomainName:
+    Description: "top level domain for the sidecar"
+    Type: String
+  SidecarNamePrefix:
+    Type: String
+    Description: "Name prefix of the sidecar. This parameter is used to identify the elements of this stack and also the events created during runtime."
+
+  # Lambda DNS and networking configuration
   HostedZoneID:
     Type: AWS::Route53::HostedZone::Id
     Description: "Hosted zone where the failover record sets will be created."
@@ -146,6 +236,8 @@ Conditions:
     - !Not [!Equals [!Ref RepoPassword, ""]]
   UseDefaultCodeS3Bucket: !Equals [!Ref FailOpenCodeS3Bucket, ""]
   UseDefaultCodeS3Key: !Equals [!Ref FailOpenCodeS3Key, ""]
+
+  IsSnowflakeRepository: !Equals [!Ref RepoType, "snowflake"]
 
 Resources:
   RepoSecret:
@@ -265,7 +357,17 @@ Resources:
           FAIL_OPEN_N_RETRIES: !Sub "${NumberOfRetries}"
           FAIL_OPEN_LOG_LEVEL: !Ref LogLevel
 
+<<<<<<< HEAD
           FAIL_OPEN_CONNECTION_STRING_OPTIONS: !Ref ConnectionStringOptions
+||||||| parent of 27545c8 (Starts development of snowflake support in main cft)
+          FAIL_OPEN_PG_CONN_OPTS: !Ref PostgreSQLConnectionOpts
+=======
+          FAIL_OPEN_SNOWFLAKE_ACCOUNT: !Ref SnowflakeAccount
+          FAIL_OPEN_SNOWFLAKE_ROLE: !Ref SnowflakeRole
+          FAIL_OPEN_SNOWFLAKE_WAREHOUSE: !Ref SnowflakeWarehouse
+
+          FAIL_OPEN_PG_CONN_OPTS: !Ref PostgreSQLConnectionOpts
+>>>>>>> 27545c8 (Starts development of snowflake support in main cft)
           # adding oracle client path so that oracle client works
           LD_LIBRARY_PATH: 'oracle-client_21_4'
 
@@ -279,7 +381,7 @@ Resources:
       VpcConfig:
         SecurityGroupIds:
           - !Ref LambdaSecurityGroup
-        SubnetIds: !Ref Subnets
+        SubnetIds: !Ref LambdaSubnets
 
   Events:
     Type: AWS::Events::Rule
@@ -332,3 +434,134 @@ Resources:
       HealthCheckTags:
         - Key: Name
           Value: !Ref AWS::StackName
+
+  LaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      KeyName:
+        Ref: SSHKeyName
+      ImageId: !Ref SnowflakeNGINXProxyAmiId
+      SecurityGroups:
+        Ref: "InstanceSecurityGroup"
+      InstanceType:
+        Ref: "InstanceType"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+
+          wget https://openresty.org/package/amazon/openresty.repo -O /etc/yum.repos.d/openresty.repo
+          yum check-update
+          yum update -y
+          yum install -y openresty
+          #amazon-linux-extras enable nginx1
+          #yum install -y nginx
+          mkdir /usr/local/openresty/nginx/conf.d
+          function gen_site_conf() {
+            sudo bash -c "cat > /usr/local/openresty/nginx/conf.d/$1.conf" << EOF
+            server {
+                    root /var/www/html;
+                    server_name $1;
+                    location / {
+                            if (\$is_browser = "1") {
+                                add_header X-Deny-Reason "Redirecting to snowflake";
+                                return 302 https://$2/;
+                            }
+                            proxy_pass https://$2/;
+                    }
+
+                    listen 443;
+                    listen [::]:443;
+            }
+          EOF
+          }
+          function gen_bi_site_conf() {
+            sudo bash -c "cat > /usr/local/openresty/nginx/conf.d/$1.conf" << EOF
+            server {
+                    root /var/www/html;
+                    server_name $1;
+                    location / {
+                            proxy_pass https://$2/;
+                    }
+                    listen 443;
+                    listen [::]:443;
+            }
+          EOF
+          }
+          # Add new nginx variable
+          sed -i '/^http /a\    map \$http_user_agent \$is_browser {\n        default "0";\n        "~^Mozilla" "1";\n    }\n    include /usr/local/openresty/nginx/conf.d/*.conf;' /usr/local/openresty/nginx/conf/nginx.conf
+          # Change the default nginx port on the default server to 8888 for healthchecks
+          sed -i 's/80;/8888;/' /usr/local/openresty/nginx/conf/nginx.conf
+          # Create the entry for sidecar domain
+          gen_site_conf ${SidecarHost} ${RepoHost}
+          # Create the entry for the snowflake domain for tableau users
+          gen_bi_site_conf ${SnowflakeAccount}.${SidecarDomainName} ${RepoHost}
+          systemctl enable openresty
+          systemctl start openresty
+
+  TargetGroup443:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckIntervalSeconds: 30
+      HealthCheckPort: 8888
+      HealthCheckProtocol: TCP
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 3
+      Name: !Join ['-', [!Ref SidecarNamePrefix, 443, group]]
+      Port: 443
+      Protocol: TCP
+      UnhealthyThresholdCount: 3
+      VpcId: !Ref VPC
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    DependsOn: [ LaunchConfig, TargetGroup443 ]
+    Properties:
+      AutoScalingGroupName: !Join ['-', [!Ref SidecarNamePrefix, snowflake,failopen,AutoScalingGroup]]
+      Cooldown: 120
+      DesiredCapacity:
+        Ref: SnowflakeNGINXProxyAsgDesired
+      LaunchConfigurationName: !Ref LaunchConfig
+      MaxSize:
+        Ref: SnowflakeNGINXProxyAsgMax
+      MinSize:
+        Ref: SnowflakeNGINXProxyAsgMin
+      TargetGroupARNs:
+        - !Ref TargetGroup443
+      Tags:
+        - Key: Name
+          Value: !Join ['-', [!Ref SidecarNamePrefix, snowflake, failopen, ASG]]
+          PropagateAtLaunch: 'true'
+        - Key: "Stack"
+          Value: !Ref "AWS::StackName"
+          PropagateAtLaunch: 'true'
+      VPCZoneIdentifier:
+        Ref: SnowflakeNGINXProxySubnets
+
+  ECSNLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Join ['-', [!Ref AWS::StackName, lb]]
+      Type: network
+      Scheme: !Ref LoadBalancerScheme
+      Subnets: !Ref SnowflakeNGINXProxySubnets
+      #LoadBalancerAttributes:
+      #  - Key: load_balancing.cross_zone.enabled
+      #    Value: !Ref EnableCrossZoneLoadBalancing
+      Tags:
+        - Key: "Stack"
+          Value: !Ref "AWS::StackName"
+
+  NLBListener443:
+    DependsOn:
+      - ECSNLB
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      SslPolicy: ELBSecurityPolicy-2016-08
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup443
+      Certificates:
+        - CertificateArn: !Ref SnowflakeNGINXProxyLoadBalancerCertificateArn
+      LoadBalancerArn: !Ref ECSNLB
+      Port: 443
+      Protocol: TLS
