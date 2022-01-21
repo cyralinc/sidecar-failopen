@@ -137,9 +137,9 @@ steps:
 
 availableSecrets:
   secretManager:
-    - versionName: projects/cyral-dev/secrets/github-aws-key-secret/versions/3
+    - versionName: projects/cyral-dev/secrets/github-aws-key-secret/versions/4
       env: AWS_SECRET_ACCESS_KEY
-    - versionName: projects/cyral-dev/secrets/github-aws-key-id/versions/3
+    - versionName: projects/cyral-dev/secrets/github-aws-key-id/versions/4
       env: AWS_ACCESS_KEY_ID
 
 options:
