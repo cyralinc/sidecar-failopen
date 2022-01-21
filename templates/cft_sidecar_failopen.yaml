@@ -182,7 +182,7 @@ Parameters:
     Description: "Amazon Linux 2 AMI ID for sidecar EC2 instances. The default behavior is to use the latest version.
       In order to define a new image, replace 'recommended' by the desired image name (eg 'amzn2-ami-ecs-hvm-2.0.20181112-x86_64-ebs')."
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
-  ProxySidecarDomainName:
+  SidecarDomainName:
     Description: "top level domain for the sidecar"
     Type: String
   SidecarNamePrefix:
@@ -225,7 +225,6 @@ Conditions:
     - !Not [!Equals [!Ref RepoPassword, ""]]
   UseDefaultCodeS3Bucket: !Equals [!Ref FailOpenCodeS3Bucket, ""]
   UseDefaultCodeS3Key: !Equals [!Ref FailOpenCodeS3Key, ""]
-
   IsSnowflakeRepository: !Equals [!Ref RepoType, "snowflake"]
 
 Resources:
@@ -262,7 +261,7 @@ Resources:
       Failover: SECONDARY
       HostedZoneId: !Ref HostedZoneID
       ResourceRecords:
-        - !Ref RepoHost
+        - !If [IsSnowflakeRepository, !Ref RepoHost, !GetAtt ECSNLB.DNSName]
       Name: !Ref RecordSetName
       TTL: !Ref TTL
       SetIdentifier: "database"
@@ -378,7 +377,6 @@ Resources:
           Arn: !GetAtt LambdaFunction.Arn
 
   EventPermission:
-    DependsOn: LambdaFunction
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref AWS::StackName
@@ -406,7 +404,6 @@ Resources:
 
   Route53HealthCheck:
     Type: AWS::Route53::HealthCheck
-    DependsOn: Route53CloudWatchAlarm
     Properties:
       HealthCheckConfig:
         AlarmIdentifier:
@@ -419,15 +416,13 @@ Resources:
           Value: !Ref AWS::StackName
 
   LaunchConfig:
+    Condition: IsSnowflakeRepository
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
-      KeyName:
-        Ref: SSHKeyName
+      KeyName: !Ref SnowflakeNGINXProxySSHKeyName
       ImageId: !Ref SnowflakeNGINXProxyAmiId
-      SecurityGroups:
-        Ref: "InstanceSecurityGroup"
-      InstanceType:
-        Ref: "InstanceType"
+      SecurityGroups: !Ref SnowflakeNGINXProxyInstanceSecurityGroup
+      InstanceType: !Ref SnowflakeNGINXProxyInstanceType
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash -xe
@@ -482,6 +477,7 @@ Resources:
           systemctl start openresty
 
   TargetGroup443:
+    Condition: IsSnowflakeRepository
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 30
@@ -489,15 +485,15 @@ Resources:
       HealthCheckProtocol: TCP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 3
-      Name: !Join ['-', [!Ref SidecarNamePrefix, 443, group]]
+      Name: !Sub "${SidecarNamePrefix}-443-group"
       Port: 443
       Protocol: TCP
       UnhealthyThresholdCount: 3
       VpcId: !Ref VPC
 
   AutoScalingGroup:
+    Condition: IsSnowflakeRepository
     Type: AWS::AutoScaling::AutoScalingGroup
-    DependsOn: [ LaunchConfig, TargetGroup443 ]
     Properties:
       AutoScalingGroupName: !Join ['-', [!Ref SidecarNamePrefix, snowflake,failopen,AutoScalingGroup]]
       Cooldown: 120
@@ -521,11 +517,12 @@ Resources:
         Ref: SnowflakeNGINXProxySubnets
 
   ECSNLB:
+    Condition: IsSnowflakeRepository
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
       Name: !Join ['-', [!Ref AWS::StackName, lb]]
       Type: network
-      Scheme: !Ref LoadBalancerScheme
+      Scheme: !Ref SnowflakeNGINXProxyLoadBalancerScheme
       Subnets: !Ref SnowflakeNGINXProxySubnets
       #LoadBalancerAttributes:
       #  - Key: load_balancing.cross_zone.enabled
@@ -535,8 +532,7 @@ Resources:
           Value: !Ref "AWS::StackName"
 
   NLBListener443:
-    DependsOn:
-      - ECSNLB
+    Condition: IsSnowflakeRepository
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       SslPolicy: ELBSecurityPolicy-2016-08
