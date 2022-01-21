@@ -122,7 +122,7 @@ steps:
     id: "upload-us-east-1"
     entrypoint: "scripts/publish.sh"
     env:
-      - "BUCKET=cyral-public-assets"
+      - "BUCKET=cyral-public-assets-"
       - "BUCKET_KEY_PREFIX=fail-open"
       - "VERSION=$TAG_NAME"
       - "APPEND_REGION=true"
