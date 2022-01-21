@@ -15,7 +15,7 @@ do
     echo "adding object to ${_bucket}/${prefix}/${version}/fail-open-lambda.zip"
     if [[ ${PUBLIC} = "true" ]]; then
         aws s3api put-object \
-            --bucket ${bucket} \
+            --bucket ${_bucket} \
             --key ${prefix}/${version}/fail-open-lambda.zip \
             --acl public-read \
             --body fail-open-lambda.zip  \
@@ -23,7 +23,7 @@ do
             --metadata "VERSION=${version}"
     else
         aws s3api put-object \
-            --bucket ${bucket} \
+            --bucket ${_bucket} \
             --key ${prefix}/${version}/fail-open-lambda.zip \
             --body fail-open-lambda.zip  \
             --tagging "VERSION=${version}" \
