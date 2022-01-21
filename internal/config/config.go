@@ -9,6 +9,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+type PostgreSQLConfig struct {
+	ConnectionStringOptions string
+}
+
+type SnowflakeConfig struct {
+	Account   string
+	Role      string
+	Warehouse string
+}
+
 // RepoConfig is the configuration for a repository, including
 // connection information and metadata.
 type RepoConfig struct {
@@ -19,7 +29,8 @@ type RepoConfig struct {
 	Database        string
 	RepoName        string
 	RepoType        string
-	PGStringOptions string
+	PGConfig        PostgreSQLConfig
+	SnowflakeConfig SnowflakeConfig
 }
 
 // LambdaConfig is the configuration for the lambda in general. This
@@ -55,6 +66,11 @@ func init() {
 	viper.BindEnv("cf_stack_name") // name of the stack
 
 	viper.BindEnv("pg_conn_opts") // connection options for pg based repos
+
+	// snowflake configuration
+	viper.BindEnv("snowflake_role")
+	viper.BindEnv("snowflake_account")
+	viper.BindEnv("snowflake_warehouse")
 }
 
 var c *LambdaConfig
@@ -73,24 +89,42 @@ func Config() *LambdaConfig {
 			NumberOfRetries: viper.GetInt("n_retries"),
 			LogLevel:        viper.GetString("log_level"),
 			Repo: RepoConfig{
-				Host:            viper.GetString("repo_host"),
-				Port:            viper.GetInt("repo_port"),
-				Database:        viper.GetString("repo_database"),
-				RepoType:        viper.GetString("repo_type"),
-				RepoName:        viper.GetString("repo_name"),
-				User:            sec.Username,
-				Password:        sec.Password,
-				PGStringOptions: viper.GetString("pg_conn_opts"),
+				Host:     viper.GetString("repo_host"),
+				Port:     viper.GetInt("repo_port"),
+				Database: viper.GetString("repo_database"),
+				RepoType: viper.GetString("repo_type"),
+				RepoName: viper.GetString("repo_name"),
+				User:     sec.Username,
+				Password: sec.Password,
+				PGConfig: PostgreSQLConfig{
+					ConnectionStringOptions: viper.GetString("pg_conn_opts"),
+				},
+
+				SnowflakeConfig: SnowflakeConfig{
+					Account:   viper.GetString("snowflake_account"),
+					Role:      viper.GetString("snowflake_role"),
+					Warehouse: viper.GetString("snowflake_warehouse"),
+				},
 			},
 			Sidecar: RepoConfig{
-				Host:            viper.GetString("sidecar_host"),
-				Port:            viper.GetInt("sidecar_port"),
-				Database:        viper.GetString("repo_database"),
-				RepoType:        viper.GetString("repo_type"),
-				RepoName:        viper.GetString("repo_name"),
-				User:            sec.Username,
-				Password:        sec.Password,
-				PGStringOptions: viper.GetString("pg_conn_opts"),
+				Host:     viper.GetString("sidecar_host"),
+				Port:     viper.GetInt("sidecar_port"),
+				Database: viper.GetString("repo_database"),
+				RepoType: viper.GetString("repo_type"),
+				RepoName: viper.GetString("repo_name"),
+
+				User:     sec.Username,
+				Password: sec.Password,
+
+				PGConfig: PostgreSQLConfig{
+					ConnectionStringOptions: viper.GetString("pg_conn_opts"),
+				},
+
+				SnowflakeConfig: SnowflakeConfig{
+					Account:   viper.GetString("snowflake_account"),
+					Role:      viper.GetString("snowflake_role"),
+					Warehouse: viper.GetString("snowflake_warehouse"),
+				},
 			},
 			StackName: viper.GetString("cf_stack_name"),
 		}

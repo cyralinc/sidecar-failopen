@@ -7,9 +7,9 @@ import (
 )
 
 func ParseOptString(cfg config.RepoConfig) string {
-	if cfg.PGStringOptions == "" {
+	if cfg.PGConfig.ConnectionStringOptions == "" {
 		return ""
 	}
-	opts := strings.Split(cfg.PGStringOptions, ",")
+	opts := strings.Split(cfg.PGConfig.ConnectionStringOptions, ",")
 	return "?" + strings.Join(opts, "&")
 }
