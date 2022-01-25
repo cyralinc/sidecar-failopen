@@ -30,14 +30,15 @@ Some limitations apply to the operation of the fail-open feature, as described b
 
 | Repo          |
 |-------------- |
+| Denodo        |
+| MariaDB       |
 | MySQL         |
 | Oracle        |
 | PostgreSQL    |
+| Redshift      |
 | Snowflake*    |
 
-MySQL, Oracle and PostgreSQL are supported in the current version of [the CFT](./templates/cft_sidecar_failopen.yaml).
-
-Click [here for Snowflake support](./snowflake) and follow the instructions.
+*Click [here for Snowflake support](./snowflake) and follow the instructions.
 
 ## DNS CNAME
 
