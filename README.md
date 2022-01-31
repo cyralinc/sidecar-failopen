@@ -77,7 +77,7 @@ one lambda will be deployed for each sidecar/repository endpoint pair.
 The stack can be deployed to CloudFormation via AWS Console or AWS CLI. All the necessary parameters
 and detailed information on each of them are shown in the `Parameters` section of the
 [CloudFormation Template](./templates/cft_sidecar_failopen.yaml). Before you deploy, read the entire
-[Deployment Pre-Requisites](#deployment-pre-prequisites) section and make sure you have all of them
+[Deployment prerequisites](#deployment-prerequisites) section and make sure you have all of them
 ready before you give it a go.
 
 ## Credentials Management
