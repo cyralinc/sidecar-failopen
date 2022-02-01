@@ -15,6 +15,9 @@ import (
 	// oracle for oracle only
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/oracle"
 
+	// snowflake
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/snowflake"
+
 	// pg covers postgresql, denodo and redshift
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/postgresql"
 
