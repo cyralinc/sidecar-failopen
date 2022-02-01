@@ -258,7 +258,7 @@ Resources:
       Failover: SECONDARY
       HostedZoneId: !Ref HostedZoneID
       ResourceRecords:
-        - !If [IsSnowflakeRepository, !Ref RepoHost, !GetAtt ECSNLB.DNSName]
+        - !If [IsSnowflakeRepository, !GetAtt ECSNLB.DNSName, !Ref RepoHost]
       Name: !Ref RecordSetName
       TTL: !Ref TTL
       SetIdentifier: "database"
