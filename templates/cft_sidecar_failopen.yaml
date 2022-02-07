@@ -258,7 +258,7 @@ Resources:
       Failover: SECONDARY
       HostedZoneId: !Ref HostedZoneID
       ResourceRecords:
-        - !If [IsSnowflakeRepository, !GetAtt ECSNLB.DNSName, !Ref RepoHost]
+        - !If [IsSnowflakeRepository, !GetAtt NLB.DNSName, !Ref RepoHost]
       Name: !Ref RecordSetName
       TTL: !Ref TTL
       SetIdentifier: "database"
@@ -513,7 +513,7 @@ Resources:
       VPCZoneIdentifier:
         Ref: SnowflakeNGINXProxySubnets
 
-  ECSNLB:
+  NLB:
     Condition: IsSnowflakeRepository
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
@@ -538,6 +538,6 @@ Resources:
           TargetGroupArn: !Ref TargetGroup443
       Certificates:
         - CertificateArn: !Ref SnowflakeNGINXProxyLoadBalancerCertificateArn
-      LoadBalancerArn: !Ref ECSNLB
+      LoadBalancerArn: !Ref NLB
       Port: 443
       Protocol: TLS
