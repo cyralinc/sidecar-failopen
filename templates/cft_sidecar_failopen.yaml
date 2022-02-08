@@ -51,6 +51,7 @@ Metadata:
           - SnowflakeNGINXProxyLoadBalancerScheme
           - SnowflakeNGINXProxyLoadBalancerCertificateArn
           - SnowflakeNGINXProxyAmiId
+          - SnowflakeNGINXProxyEnableCrossZoneLoadBalancing
           - SidecarDomainName
           - SidecarNamePrefix
 
@@ -174,6 +175,10 @@ Parameters:
     Type: String
     Description: (Optional) ARN of SSL certificate that will be used for client connections to Snowflake.
     Default: ""
+  SnowflakeNGINXProxyEnableCrossZoneLoadBalancing:
+    Type: String
+    Description: If the load balancer for the snowflake NGINX proxy should have cross zone load balancing.
+    AllowedValues: ["true", "false"]
   SnowflakeNGINXProxyAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Description: "Amazon Linux 2 AMI ID for sidecar EC2 instances. The default behavior is to use the latest version.
@@ -223,6 +228,7 @@ Conditions:
   UseDefaultCodeS3Bucket: !Equals [!Ref FailOpenCodeS3Bucket, ""]
   UseDefaultCodeS3Key: !Equals [!Ref FailOpenCodeS3Key, ""]
   IsSnowflakeRepository: !Equals [!Ref RepoType, "snowflake"]
+
 
 Resources:
   RepoSecret:
@@ -521,9 +527,9 @@ Resources:
       Type: network
       Scheme: !Ref SnowflakeNGINXProxyLoadBalancerScheme
       Subnets: !Ref SnowflakeNGINXProxySubnets
-      #LoadBalancerAttributes:
-      #  - Key: load_balancing.cross_zone.enabled
-      #    Value: !Ref EnableCrossZoneLoadBalancing
+      LoadBalancerAttributes:
+        - Key: load_balancing.cross_zone.enabled
+          Value: !Ref SnowflakeNGINXProxyEnableCrossZoneLoadBalancing
       Tags:
         - Key: "Stack"
           Value: !Ref "AWS::StackName"
