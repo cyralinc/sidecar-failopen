@@ -36,9 +36,10 @@ Some limitations apply to the operation of the fail-open feature, as described b
 | Oracle        |
 | PostgreSQL    |
 | Redshift      |
-| Snowflake*    |
+| Snowflake\*   |
+| SQLServer     |
 
-*Click [here for Snowflake support](./snowflake) and follow the instructions.
+\*Click [here for Snowflake support](./snowflake) and follow the instructions.
 
 ## DNS CNAME
 
