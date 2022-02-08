@@ -57,7 +57,7 @@ Parameters:
   RepoType:
     Type: String
     Description: "The type of the repository that the health check will connect to."
-    AllowedValues: [denodo, mariadb, mysql, oracle, postgresql, redshift]
+    AllowedValues: [denodo, mariadb, mysql, oracle, postgresql, redshift, sqlserver]
   RepoSecretArn:
     Type: String
     Description: "Name of the entry in AWS Secrets Manager that stores the secret containing the repository credentials."

@@ -11,10 +11,15 @@ import (
 	// registering drivers for the healthcheck
 	// mysql covers mysql and mariadb
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/mysql"
+
+	// oracle for oracle only
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/oracle"
 
 	// pg covers postgresql, denodo and redshift
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/postgresql"
+
+	// sqlserver
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/sqlserver"
 )
 
 func Run(ctx context.Context) error {
