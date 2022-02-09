@@ -49,10 +49,8 @@ Metadata:
           - SnowflakeNGINXProxyInstanceType
           - SnowflakeNGINXProxyInstanceSecurityGroup
           - SnowflakeNGINXProxyLoadBalancerScheme
-          - SnowflakeNGINXProxyLoadBalancerCertificateArn
           - SnowflakeNGINXProxyAmiId
           - SnowflakeNGINXProxyEnableCrossZoneLoadBalancing
-          - SidecarDomainName
           - SidecarNamePrefix
 
 Parameters:
@@ -171,10 +169,6 @@ Parameters:
     AllowedValues: ['internal', 'internet-facing']
     Default: 'internal'
     ConstraintDescription: must specify 'internal' or 'internet-facing'.
-  SnowflakeNGINXProxyLoadBalancerCertificateArn:
-    Type: String
-    Description: (Optional) ARN of SSL certificate that will be used for client connections to Snowflake.
-    Default: ""
   SnowflakeNGINXProxyEnableCrossZoneLoadBalancing:
     Type: String
     Description: If the load balancer for the snowflake NGINX proxy should have cross zone load balancing.
@@ -184,9 +178,6 @@ Parameters:
     Description: "Amazon Linux 2 AMI ID for sidecar EC2 instances. The default behavior is to use the latest version.
       In order to define a new image, replace 'recommended' by the desired image name (eg 'amzn2-ami-ecs-hvm-2.0.20181112-x86_64-ebs')."
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
-  SidecarDomainName:
-    Description: "top level domain for the sidecar"
-    Type: String
   SidecarNamePrefix:
     Type: String
     Description: "Name prefix of the sidecar. This parameter is used to identify the elements of this stack and also the events created during runtime."
@@ -418,6 +409,20 @@ Resources:
         - Key: Name
           Value: !Ref AWS::StackName
 
+  SnowflakeNGINXProxyLoadBalancerCertificate:
+    Condition: IsSnowflakeRepository
+    Type: "AWS::CertificateManager::Certificate"
+    Properties: 
+      DomainName: !Ref RecordSetName
+      DomainValidationOptions:
+            - DomainName: !Ref RecordSetName
+              HostedZoneId: !Ref HostedZoneID
+      SubjectAlternativeNames: [!Ref SidecarHost]
+      ValidationMethod: DNS 
+      Tags:
+        - Key: "Stack"
+          Value: !Ref "AWS::StackName"
+
   LaunchConfig:
     Condition: IsSnowflakeRepository
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -588,6 +593,7 @@ Resources:
 
   NLBListener443:
     Condition: IsSnowflakeRepository
+    DependsOn: SnowflakeNGINXProxyLoadBalancerCertificate
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       SslPolicy: ELBSecurityPolicy-2016-08
@@ -595,7 +601,7 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref TargetGroup443
       Certificates:
-        - CertificateArn: !Ref SnowflakeNGINXProxyLoadBalancerCertificateArn
+        - CertificateArn: !Ref SnowflakeNGINXProxyLoadBalancerCertificate
       LoadBalancerArn: !Ref NLB
       Port: 443
       Protocol: TLS
