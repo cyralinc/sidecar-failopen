@@ -27,10 +27,11 @@ var _ repository.Repository = (*snowflakeRepository)(nil)
 
 func NewSnowflakeRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
 	connStr := fmt.Sprintf(
-		"%s:%s@%s/%s?role=%s&warehouse=%s",
+		"%s:%s@%s:%d/%s?role=%s&warehouse=%s",
 		cfg.User,
 		cfg.Password,
-		cfg.SnowflakeConfig.Account,
+		cfg.Host,
+		cfg.Port,
 		cfg.Database,
 		cfg.SnowflakeConfig.Role,
 		cfg.SnowflakeConfig.Warehouse,
