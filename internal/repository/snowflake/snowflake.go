@@ -6,6 +6,7 @@ import (
 
 	"github.com/cyralinc/sidecar-failopen/internal/config"
 	"github.com/cyralinc/sidecar-failopen/internal/keys"
+	"github.com/cyralinc/sidecar-failopen/internal/logging"
 	"github.com/cyralinc/sidecar-failopen/internal/repository"
 	"github.com/cyralinc/sidecar-failopen/internal/repository/genericsql"
 
@@ -26,6 +27,15 @@ type snowflakeRepository struct {
 var _ repository.Repository = (*snowflakeRepository)(nil)
 
 func NewSnowflakeRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
+	logging.Debug("instantiating snowflake repo at %s:%d/%s?role=%s&warehouse=%s&account=%s",
+		cfg.Host,
+		cfg.Port,
+		cfg.Database,
+		cfg.SnowflakeConfig.Role,
+		cfg.SnowflakeConfig.Warehouse,
+		cfg.SnowflakeConfig.Account,
+	)
+
 	connStr := fmt.Sprintf(
 		"%s:%s@%s:%d/%s?role=%s&warehouse=%s&account=%s",
 		cfg.User,

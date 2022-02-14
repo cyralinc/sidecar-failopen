@@ -39,11 +39,14 @@ func singleHealthCheck(ctx context.Context, sidecar repository.Repository, repo 
 // HealthCheck performs the full health check procedure, including the retries.
 func HealthCheck(ctx context.Context, cfg *config.LambdaConfig) error {
 
+	cfg.Sidecar.RepoName = "sidecar"
 	sidecar, err := repository.Recover(cfg.Sidecar.RepoType)(ctx, cfg.Sidecar)
 	if err != nil {
 		return err
 	}
 	defer sidecar.Close()
+
+	cfg.Repo.RepoName = "repo"
 	repo, err := repository.Recover(cfg.Repo.RepoType)(ctx, cfg.Repo)
 	if err != nil {
 		return err
