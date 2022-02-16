@@ -7,6 +7,7 @@ package healthcheck
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/cyralinc/sidecar-failopen/internal/config"
 	"github.com/cyralinc/sidecar-failopen/internal/logging"
@@ -17,11 +18,15 @@ func singleHealthCheck(ctx context.Context, sidecar repository.Repository, repo 
 	if sidecar.Type() != repo.Type() {
 		return fmt.Errorf("sidecar repo type '%s' does not match '%s'", sidecar.Type(), repo.Type()), nil
 	}
+	sidecarCtx, sidecarCancel := context.WithTimeout(ctx, time.Second*2)
+	defer sidecarCancel()
 
-	sErr = sidecar.Ping(ctx)
+	sErr = sidecar.Ping(sidecarCtx)
 	if sErr != nil { // in case the sidecar fails, we test the repo
 		logging.Debug("sidecar could not respond. error: %s", sErr.Error())
-		rErr = repo.Ping(ctx)
+		repoCtx, repoCancel := context.WithTimeout(ctx, time.Second*2)
+		defer repoCancel()
+		rErr = repo.Ping(repoCtx)
 		if rErr != nil {
 			logging.Debug("repository could not respond. error: %s", rErr.Error())
 
