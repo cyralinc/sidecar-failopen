@@ -38,10 +38,12 @@ func HealthCheck(ctx context.Context, cfg *config.LambdaConfig) error {
 	if err != nil {
 		return err
 	}
+	defer sidecar.Close()
 	repo, err := repository.Recover(cfg.Repo.RepoType)(ctx, cfg.Repo)
 	if err != nil {
 		return err
 	}
+	defer repo.Close()
 
 	var sErr, rErr error
 	for i := 0; i < cfg.NumberOfRetries; i++ {

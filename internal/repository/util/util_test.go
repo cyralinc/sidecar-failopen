@@ -19,7 +19,7 @@ func TestParseOptString(t *testing.T) {
 			name: "valid single config",
 			args: args{
 				cfg: config.RepoConfig{
-					PGStringOptions: "this=that",
+					ConnectionStringOptions: "this=that",
 				},
 			},
 			want: "?this=that",
@@ -29,7 +29,7 @@ func TestParseOptString(t *testing.T) {
 			name: "valid multiple config",
 			args: args{
 				cfg: config.RepoConfig{
-					PGStringOptions: "this=that,that=this",
+					ConnectionStringOptions: "this=that,that=this",
 				},
 			},
 			want: "?this=that&that=this",
@@ -39,7 +39,7 @@ func TestParseOptString(t *testing.T) {
 			name: "valid empty config",
 			args: args{
 				cfg: config.RepoConfig{
-					PGStringOptions: "",
+					ConnectionStringOptions: "",
 				},
 			},
 			want: "",
