@@ -54,7 +54,6 @@ func NewMongoDBRepo(ctx context.Context, config config.RepoConfig) (repository.R
 		config.Port,
 		connStringOpts,
 	)
-	logging.Debug(connStr)
 
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(connStr))
 	if err != nil {
