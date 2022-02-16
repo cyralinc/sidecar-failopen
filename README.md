@@ -32,6 +32,7 @@ Some limitations apply to the operation of the fail-open feature, as described b
 |-------------- |
 | Denodo        |
 | MariaDB       |
+| MongoDB       |
 | MySQL         |
 | Oracle        |
 | PostgreSQL    |
@@ -109,6 +110,22 @@ You can set up the credentials for the health check in two ways:
   and then attach the lambda to the created subnets.
 
 - The database name against which the health check commands will be executed.
+
+## MongoDB Replica Set
+To connect to a MongoDB replicaset, you can add the hosts for the replica set by inserting them in the `RepositoryHost` field
+separated by commas. Each host except for the last one should have its port attached to it. The port for the last host
+should be set on the `RepositoryPort` field. E.g:
+
+```
+RepositoryHost: mongodb1:27017,mongodb2
+RepositoryPort: 27017
+```
+
+You can set the replica set ID for `MongoDB` using the field `ConnectionStringOptions` of the CF template.
+
+```
+ConnectionStringOptions: replicaSet=myReplicaSet
+```
 
 # FAQ
 
