@@ -20,6 +20,9 @@ import (
 
 	// sqlserver
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/sqlserver"
+
+	// mongodb
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/mongodb"
 )
 
 func Run(ctx context.Context) error {

@@ -9,7 +9,7 @@ import (
 	"github.com/cyralinc/sidecar-failopen/internal/logging"
 	"github.com/cyralinc/sidecar-failopen/internal/repository"
 	"github.com/cyralinc/sidecar-failopen/internal/repository/genericsql"
-	"github.com/cyralinc/sidecar-failopen/internal/repository/postgresql/util"
+	"github.com/cyralinc/sidecar-failopen/internal/repository/util"
 
 	// Postgresql DB driver
 	_ "github.com/lib/pq"
