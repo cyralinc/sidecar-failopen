@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/cyralinc/sidecar-failopen/internal/logging"
 	"github.com/cyralinc/sidecar-failopen/internal/repository"
@@ -53,10 +52,8 @@ func NewGenericSqlRepository(repoName, repoType, database, connStr string) (*Gen
 }
 
 func (repo *GenericSqlRepository) Ping(ctx context.Context) error {
-	tctx, cancel := context.WithTimeout(ctx, time.Second*2)
-	defer cancel()
 	logging.Debug("pinging repo %s", repo.repoName)
-	rows, err := repo.db.QueryContext(tctx, PingQuery)
+	rows, err := repo.db.QueryContext(ctx, PingQuery)
 	if err != nil {
 		return err
 	}

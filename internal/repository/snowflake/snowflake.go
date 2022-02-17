@@ -61,6 +61,20 @@ func NewSnowflakeRepository(_ context.Context, cfg config.RepoConfig) (repositor
 	return &snowflakeRepository{GenericSqlRepository: sqlRepo}, nil
 }
 
+func (repo *snowflakeRepository) Ping(ctx context.Context) error {
+	errChan := make(chan error)
+	go func() {
+		errChan <- repo.GenericSqlRepository.Ping(ctx)
+	}()
+
+	select {
+	case <-errChan:
+		return <-errChan
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 func init() {
 	repository.Register(keys.SnowflakeRepoKey, NewSnowflakeRepository)
 }
