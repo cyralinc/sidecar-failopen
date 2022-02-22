@@ -112,8 +112,9 @@ You can set up the credentials for the health check in two ways:
 - The database name against which the health check commands will be executed.
 
 ## MongoDB Replica Set
-To connect to a MongoDB replicaset, you can add the hosts for the replica set by inserting them in the `RepositoryHost` field
-separated by commas, with each port separated by a colon. E.g:
+To connect to a MongoDB Replica Set you must add the replica set hosts in the `RepoHost` field,
+separating them by commas, with each port separated by a colon. When using this configuration, the
+parameter `RepoPort` must be set to `0`. E.g.:
 
 ```
 RepositoryHost: mongodb1:27017,mongodb2
