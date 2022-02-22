@@ -17,13 +17,6 @@ const (
 	PingQuery = "SELECT 1"
 )
 
-/*
-MongoDBRepository is an implementation of repository.Repository that
-works for a subset of ANSI SQL compatible databases. In addition to the
-standard repository.Repository methods, it also exposes some SQL-specific
-functionality, which may be useful for other repository.Repository
-implementations.
-*/
 type MongoDBRepository struct {
 	repoName string
 	repoType string
@@ -37,14 +30,6 @@ var _ repository.Repository = (*MongoDBRepository)(nil)
 const connectionStringFmt string = "mongodb://%s:%s@%s:%d/%s"
 const rsConnectionStringFmt string = "mongodb://%s:%s@%s/%s"
 
-/*
-NewGenericSqlRepository is the constructor for the GenericSqlRepository type.
-Note that it returns a pointer to GenericSqlRepository rather than
-repository.Repository. This is intentional, as the GenericSqlRepository type
-exposes additional functionality on top of the repository.Repository
-interface. If the caller is not concerned with this additional functionality,
-they are free to assign to the return value to repository.Repository
-*/
 func NewMongoDBRepo(ctx context.Context, config config.RepoConfig) (repository.Repository, error) {
 	logging.Debug("connecting to mongdb repo on mongdb://%s:%d", config.Host, config.Port)
 	connStringOpts := util.ParseOptString(config)

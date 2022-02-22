@@ -117,7 +117,8 @@ separating them by commas, with each port separated by a colon. When using this 
 parameter `RepoPort` must be set to `0`. E.g.:
 
 ```
-RepositoryHost: mongodb1:27017,mongodb2
+RepoHost: mongodb1:27017,mongodb2:27017
+RepoPort: 0
 ```
 
 You can set the replica set ID for `MongoDB` using the field `ConnectionStringOptions` of the CF template.
