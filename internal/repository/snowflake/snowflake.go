@@ -69,8 +69,10 @@ func (repo *snowflakeRepository) Ping(ctx context.Context) error {
 
 	select {
 	case <-errChan:
+		logging.Debug("request complete")
 		return <-errChan
 	case <-ctx.Done():
+		logging.Debug("deadline exceeded, returning error")
 		return ctx.Err()
 	}
 }
