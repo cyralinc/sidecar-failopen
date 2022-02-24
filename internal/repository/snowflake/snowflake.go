@@ -6,6 +6,7 @@ import (
 
 	"github.com/cyralinc/sidecar-failopen/internal/config"
 	"github.com/cyralinc/sidecar-failopen/internal/keys"
+	"github.com/cyralinc/sidecar-failopen/internal/logging"
 	"github.com/cyralinc/sidecar-failopen/internal/repository"
 	"github.com/cyralinc/sidecar-failopen/internal/repository/genericsql"
 
@@ -26,14 +27,25 @@ type snowflakeRepository struct {
 var _ repository.Repository = (*snowflakeRepository)(nil)
 
 func NewSnowflakeRepository(_ context.Context, cfg config.RepoConfig) (repository.Repository, error) {
-	connStr := fmt.Sprintf(
-		"%s:%s@%s/%s?role=%s&warehouse=%s",
-		cfg.User,
-		cfg.Password,
-		cfg.SnowflakeConfig.Account,
+	logging.Debug("instantiating snowflake repo at %s:%d/%s?role=%s&warehouse=%s&account=%s",
+		cfg.Host,
+		cfg.Port,
 		cfg.Database,
 		cfg.SnowflakeConfig.Role,
 		cfg.SnowflakeConfig.Warehouse,
+		cfg.SnowflakeConfig.Account,
+	)
+
+	connStr := fmt.Sprintf(
+		"%s:%s@%s:%d/%s?role=%s&warehouse=%s&account=%s",
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.Database,
+		cfg.SnowflakeConfig.Role,
+		cfg.SnowflakeConfig.Warehouse,
+		cfg.SnowflakeConfig.Account,
 	)
 
 	sqlRepo, err := genericsql.NewGenericSqlRepository(
@@ -47,6 +59,22 @@ func NewSnowflakeRepository(_ context.Context, cfg config.RepoConfig) (repositor
 	}
 
 	return &snowflakeRepository{GenericSqlRepository: sqlRepo}, nil
+}
+
+func (repo *snowflakeRepository) Ping(ctx context.Context) error {
+	errChan := make(chan error)
+	go func() {
+		errChan <- repo.GenericSqlRepository.Ping(ctx)
+	}()
+
+	select {
+	case err := <-errChan:
+		logging.Debug("request complete")
+		return err
+	case <-ctx.Done():
+		logging.Debug("deadline exceeded, returning error")
+		return ctx.Err()
+	}
 }
 
 func init() {

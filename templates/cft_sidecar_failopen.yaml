@@ -49,10 +49,8 @@ Metadata:
           - SnowflakeNGINXProxyInstanceType
           - SnowflakeNGINXProxyInstanceSecurityGroup
           - SnowflakeNGINXProxyLoadBalancerScheme
-          - SnowflakeNGINXProxyLoadBalancerCertificateArn
           - SnowflakeNGINXProxyAmiId
           - SnowflakeNGINXProxyEnableCrossZoneLoadBalancing
-          - SidecarDomainName
           - SidecarNamePrefix
 
 Parameters:
@@ -171,10 +169,6 @@ Parameters:
     AllowedValues: ['internal', 'internet-facing']
     Default: 'internal'
     ConstraintDescription: must specify 'internal' or 'internet-facing'.
-  SnowflakeNGINXProxyLoadBalancerCertificateArn:
-    Type: String
-    Description: (Optional) ARN of SSL certificate that will be used for client connections to Snowflake.
-    Default: ""
   SnowflakeNGINXProxyEnableCrossZoneLoadBalancing:
     Type: String
     Description: If the load balancer for the snowflake NGINX proxy should have cross zone load balancing.
@@ -184,9 +178,6 @@ Parameters:
     Description: "Amazon Linux 2 AMI ID for sidecar EC2 instances. The default behavior is to use the latest version.
       In order to define a new image, replace 'recommended' by the desired image name (eg 'amzn2-ami-ecs-hvm-2.0.20181112-x86_64-ebs')."
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
-  SidecarDomainName:
-    Description: "top level domain for the sidecar"
-    Type: String
   SidecarNamePrefix:
     Type: String
     Description: "Name prefix of the sidecar. This parameter is used to identify the elements of this stack and also the events created during runtime."
@@ -418,6 +409,20 @@ Resources:
         - Key: Name
           Value: !Ref AWS::StackName
 
+  SnowflakeNGINXProxyLoadBalancerCertificate:
+    Condition: IsSnowflakeRepository
+    Type: "AWS::CertificateManager::Certificate"
+    Properties: 
+      DomainName: !Ref RecordSetName
+      DomainValidationOptions:
+            - DomainName: !Ref RecordSetName
+              HostedZoneId: !Ref HostedZoneID
+      SubjectAlternativeNames: [!Ref SidecarHost]
+      ValidationMethod: DNS 
+      Tags:
+        - Key: "Stack"
+          Value: !Ref "AWS::StackName"
+
   LaunchConfig:
     Condition: IsSnowflakeRepository
     Type: AWS::AutoScaling::LaunchConfiguration
@@ -442,6 +447,16 @@ Resources:
             server {
                     root /var/www/html;
                     server_name $1;
+                    location ~ (/session/v1/login-request|/session/authenticator-request) {
+                        resolver 172.31.0.2 ipv6=off;
+                        resolver_timeout 5s;
+                        set \$snowflakecomputing "https://$2";
+                        set \$repo_host "$2";
+                        set \$sidecar_domain "$1";
+                        access_by_lua_file src/login_access.lua;
+                        proxy_pass \$snowflakecomputing;
+                    }
+
                     location / {
                             if (\$is_browser = "1") {
                                 add_header X-Deny-Reason "Redirecting to snowflake";
@@ -468,14 +483,56 @@ Resources:
             }
           EOF
           }
-          # Add new nginx variable
+
+          # Create our lua directory
+          mkdir /usr/local/openresty/nginx/src
+          # Create the login lua file
+          echo "`cat <<EOF
+          if ngx.req.get_method() == \"POST\" then
+              ngx.req.read_body()
+              local data = ngx.req.get_body_data()
+          
+              local content_encoding = ngx.req.get_headers()[\"Content-Encoding\"]
+          
+              if content_encoding == \"gzip\" then
+                  if data then
+                      local zlib = require \"zlib\"
+                      local stream = zlib.inflate()
+                      data = stream(data);
+                  end
+              end
+          
+              local cjson = require \"cjson\"
+              local json_data = cjson.decode(data)
+          
+              -- Rewrite account name in request.
+              if (json_data.data.ACCOUNT_NAME)
+              then
+                  -- Get account name.
+                  local account_name = \"\"
+                  for part in string.gmatch(ngx.var.repo_host, \"[^%.]+\")
+                  do
+                      account_name = part
+                      break
+                  end
+          
+                  json_data.data.ACCOUNT_NAME = string.upper(account_name)
+          
+                  -- Set account name in request body.
+                  ngx.req.clear_header(\"content-length\")
+                  ngx.req.clear_header(\"content-encoding\")
+                  ngx.req.set_body_data(cjson.encode(json_data))
+              end
+          
+          end
+          EOF`" > /usr/local/openresty/nginx/src/login_access.lua
+
+          # Add new nginx map variable
           sed -i '/^http /a\    map \$http_user_agent \$is_browser {\n        default "0";\n        "~^Mozilla" "1";\n    }\n    include /usr/local/openresty/nginx/conf.d/*.conf;' /usr/local/openresty/nginx/conf/nginx.conf
           # Change the default nginx port on the default server to 8888 for healthchecks
           sed -i 's/80;/8888;/' /usr/local/openresty/nginx/conf/nginx.conf
           # Create the entry for sidecar domain
           gen_site_conf ${SidecarHost} ${RepoHost}
-          # Create the entry for the snowflake domain for tableau users
-          gen_bi_site_conf ${SnowflakeAccount}.${SidecarDomainName} ${RepoHost}
           systemctl enable openresty
           systemctl start openresty
 
@@ -536,6 +593,7 @@ Resources:
 
   NLBListener443:
     Condition: IsSnowflakeRepository
+    DependsOn: SnowflakeNGINXProxyLoadBalancerCertificate
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       SslPolicy: ELBSecurityPolicy-2016-08
@@ -543,7 +601,7 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref TargetGroup443
       Certificates:
-        - CertificateArn: !Ref SnowflakeNGINXProxyLoadBalancerCertificateArn
+        - CertificateArn: !Ref SnowflakeNGINXProxyLoadBalancerCertificate
       LoadBalancerArn: !Ref NLB
       Port: 443
       Protocol: TLS
