@@ -28,28 +28,18 @@ type MongoDBRepository struct {
 var _ repository.Repository = (*MongoDBRepository)(nil)
 
 const connectionStringFmt string = "mongodb://%s:%s@%s:%d/%s"
-const rsConnectionStringFmt string = "mongodb://%s:%s@%s/%s"
 
 func NewMongoDBRepo(ctx context.Context, config config.RepoConfig) (repository.Repository, error) {
 	logging.Debug("connecting to mongdb repo on mongdb://%s:%d", config.Host, config.Port)
 	connStringOpts := util.ParseOptString(config)
 	var connStr string
-	if config.Port == 0 {
-		connStr = fmt.Sprintf(rsConnectionStringFmt,
-			config.User,
-			config.Password,
-			config.Host,
-			connStringOpts,
-		)
-	} else {
-		connStr = fmt.Sprintf(connectionStringFmt,
-			config.User,
-			config.Password,
-			config.Host,
-			config.Port,
-			connStringOpts,
-		)
-	}
+	connStr = fmt.Sprintf(connectionStringFmt,
+		config.User,
+		config.Password,
+		config.Host,
+		config.Port,
+		connStringOpts,
+	)
 
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(connStr))
 	if err != nil {
