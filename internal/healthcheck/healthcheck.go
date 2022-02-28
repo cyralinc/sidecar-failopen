@@ -14,17 +14,19 @@ import (
 	"github.com/cyralinc/sidecar-failopen/internal/repository"
 )
 
+const requestTimeout = 2 * time.Second
+
 func singleHealthCheck(ctx context.Context, sidecar repository.Repository, repo repository.Repository) (sErr, rErr error) {
 	if sidecar.Type() != repo.Type() {
 		return fmt.Errorf("sidecar repo type '%s' does not match '%s'", sidecar.Type(), repo.Type()), nil
 	}
-	sidecarCtx, sidecarCancel := context.WithTimeout(ctx, time.Second*2)
+	sidecarCtx, sidecarCancel := context.WithTimeout(ctx, requestTimeout)
 	defer sidecarCancel()
 
 	sErr = sidecar.Ping(sidecarCtx)
 	if sErr != nil { // in case the sidecar fails, we test the repo
 		logging.Debug("sidecar could not respond. error: %s", sErr.Error())
-		repoCtx, repoCancel := context.WithTimeout(ctx, time.Second*2)
+		repoCtx, repoCancel := context.WithTimeout(ctx, requestTimeout)
 		defer repoCancel()
 		rErr = repo.Ping(repoCtx)
 		if rErr != nil {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/cyralinc/sidecar-failopen/internal/config"
+	"github.com/cyralinc/sidecar-failopen/internal/keys"
 	"github.com/cyralinc/sidecar-failopen/internal/logging"
 	"github.com/cyralinc/sidecar-failopen/internal/repository"
 	"github.com/cyralinc/sidecar-failopen/internal/repository/util"
@@ -13,24 +14,21 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
-const (
-	PingQuery = "SELECT 1"
-)
-
-type MongoDBRepository struct {
+type mongoDBRepository struct {
 	repoName string
 	repoType string
 	client   *mongo.Client
 	database string
 }
 
-// *GenericSqlRepository implements repository.Repository
-var _ repository.Repository = (*MongoDBRepository)(nil)
+// *mongoDBRepository implements repository.Repository
+var _ repository.Repository = (*mongoDBRepository)(nil)
 
+// connection string following: https://docs.mongodb.com/v5.0/reference/connection-string/
 const connectionStringFmt string = "mongodb://%s:%s@%s:%d/%s"
 
 func NewMongoDBRepo(ctx context.Context, config config.RepoConfig) (repository.Repository, error) {
-	logging.Debug("connecting to mongdb repo on mongdb://%s:%d", config.Host, config.Port)
+	logging.Debug("connecting to mongodb repo on %s:%d", config.Host, config.Port)
 	connStringOpts := util.ParseOptString(config)
 	var connStr string
 	connStr = fmt.Sprintf(connectionStringFmt,
@@ -41,28 +39,28 @@ func NewMongoDBRepo(ctx context.Context, config config.RepoConfig) (repository.R
 		connStringOpts,
 	)
 
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(connStr))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connStr))
 	if err != nil {
 		return nil, fmt.Errorf("error connecting to mongodb repo @ %s:%d - error: %v", config.Host, config.Port, err)
 	}
-	return &MongoDBRepository{
+	return &mongoDBRepository{
 		repoName: config.RepoName,
 		client:   client,
-		repoType: "mongodb",
+		repoType: keys.MongoDBRepoKey,
 	}, nil
 }
 
-func (repo *MongoDBRepository) Ping(ctx context.Context) error {
+func (repo *mongoDBRepository) Ping(ctx context.Context) error {
 	return repo.client.Ping(ctx, readpref.Primary())
 }
 
-func (repo *MongoDBRepository) Close() error {
+func (repo *mongoDBRepository) Close() error {
 	return repo.client.Disconnect(context.TODO())
 }
-func (repo *MongoDBRepository) Type() string {
+func (repo *mongoDBRepository) Type() string {
 	return repo.repoType
 }
 
 func init() {
-	repository.Register("mongodb", NewMongoDBRepo)
+	repository.Register(keys.MongoDBRepoKey, NewMongoDBRepo)
 }
