@@ -420,7 +420,6 @@ Resources:
       DomainValidationOptions:
             - DomainName: !Ref RecordSetName
               HostedZoneId: !Ref HostedZoneID
-      SubjectAlternativeNames: [!Ref SidecarHost]
       ValidationMethod: DNS 
       Tags:
         - Key: "Stack"
@@ -439,7 +438,6 @@ Resources:
           #!/bin/bash -xe
 
           wget https://openresty.org/package/amazon/openresty.repo -O /etc/yum.repos.d/openresty.repo
-          yum check-update
           yum update -y
           yum install -y openresty
           #amazon-linux-extras enable nginx1
@@ -535,7 +533,7 @@ Resources:
           # Change the default nginx port on the default server to 8888 for healthchecks
           sed -i 's/80;/8888;/' /usr/local/openresty/nginx/conf/nginx.conf
           # Create the entry for sidecar domain
-          gen_site_conf ${SidecarHost} ${RepoHost}
+          gen_site_conf ${RecordSetName} ${RepoHost}
           systemctl enable openresty
           systemctl start openresty
 
