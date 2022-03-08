@@ -412,13 +412,13 @@ Resources:
   SnowflakeNGINXProxyLoadBalancerCertificate:
     Condition: IsSnowflakeRepository
     Type: "AWS::CertificateManager::Certificate"
-    Properties: 
+    Properties:
       DomainName: !Ref RecordSetName
       DomainValidationOptions:
             - DomainName: !Ref RecordSetName
               HostedZoneId: !Ref HostedZoneID
       SubjectAlternativeNames: [!Ref SidecarHost]
-      ValidationMethod: DNS 
+      ValidationMethod: DNS
       Tags:
         - Key: "Stack"
           Value: !Ref "AWS::StackName"
@@ -465,8 +465,8 @@ Resources:
                             proxy_pass https://$2/;
                     }
 
-                    listen 443;
-                    listen [::]:443;
+                    listen ${SidecarPort};
+                    listen [::]:${SidecarPort};
             }
           EOF
           }
@@ -478,8 +478,8 @@ Resources:
                     location / {
                             proxy_pass https://$2/;
                     }
-                    listen 443;
-                    listen [::]:443;
+                    listen ${SidecarPort};
+                    listen [::]:${SidecarPort};
             }
           EOF
           }
@@ -491,9 +491,9 @@ Resources:
           if ngx.req.get_method() == \"POST\" then
               ngx.req.read_body()
               local data = ngx.req.get_body_data()
-          
+
               local content_encoding = ngx.req.get_headers()[\"Content-Encoding\"]
-          
+
               if content_encoding == \"gzip\" then
                   if data then
                       local zlib = require \"zlib\"
@@ -501,10 +501,10 @@ Resources:
                       data = stream(data);
                   end
               end
-          
+
               local cjson = require \"cjson\"
               local json_data = cjson.decode(data)
-          
+
               -- Rewrite account name in request.
               if (json_data.data.ACCOUNT_NAME)
               then
@@ -515,15 +515,15 @@ Resources:
                       account_name = part
                       break
                   end
-          
+
                   json_data.data.ACCOUNT_NAME = string.upper(account_name)
-          
+
                   -- Set account name in request body.
                   ngx.req.clear_header(\"content-length\")
                   ngx.req.clear_header(\"content-encoding\")
                   ngx.req.set_body_data(cjson.encode(json_data))
               end
-          
+
           end
           EOF`" > /usr/local/openresty/nginx/src/login_access.lua
 
@@ -536,7 +536,7 @@ Resources:
           systemctl enable openresty
           systemctl start openresty
 
-  TargetGroup443:
+  TargetGroupSidecarPort:
     Condition: IsSnowflakeRepository
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
@@ -545,8 +545,8 @@ Resources:
       HealthCheckProtocol: TCP
       HealthCheckTimeoutSeconds: 10
       HealthyThresholdCount: 3
-      Name: !Sub "${SidecarNamePrefix}-443-group"
-      Port: 443
+      Name: !Sub "${SidecarNamePrefix}-group"
+      Port: !Ref SidecarPort
       Protocol: TCP
       UnhealthyThresholdCount: 3
       VpcId: !Ref VPC
@@ -565,7 +565,7 @@ Resources:
       MinSize:
         Ref: SnowflakeNGINXProxyAsgMin
       TargetGroupARNs:
-        - !Ref TargetGroup443
+        - !Ref TargetGroupSidecarPort
       Tags:
         - Key: Name
           Value: !Join ['-', [!Ref SidecarNamePrefix, snowflake, failopen, ASG]]
@@ -591,7 +591,7 @@ Resources:
         - Key: "Stack"
           Value: !Ref "AWS::StackName"
 
-  NLBListener443:
+  NLBListenerSidecarPort:
     Condition: IsSnowflakeRepository
     DependsOn: SnowflakeNGINXProxyLoadBalancerCertificate
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -599,9 +599,9 @@ Resources:
       SslPolicy: ELBSecurityPolicy-2016-08
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref TargetGroup443
+          TargetGroupArn: !Ref TargetGroupSidecarPort
       Certificates:
         - CertificateArn: !Ref SnowflakeNGINXProxyLoadBalancerCertificate
       LoadBalancerArn: !Ref NLB
-      Port: 443
+      Port: !Ref SidecarPort
       Protocol: TLS
