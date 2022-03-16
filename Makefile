@@ -1,3 +1,4 @@
+-include env.mk
 -include env
 export
 test:

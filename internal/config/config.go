@@ -31,6 +31,7 @@ type RepoConfig struct {
 	RepoType                string
 	ConnectionStringOptions string
 	SnowflakeConfig         SnowflakeConfig
+	ConnectionTimeout       int
 }
 
 // LambdaConfig is the configuration for the lambda in general. This
@@ -51,6 +52,7 @@ func init() {
 	// sidecar location configuration
 	viper.BindEnv("sidecar_port")
 	viper.BindEnv("sidecar_host")
+	viper.BindEnv("sidecar_timeout")
 
 	// repository configuration
 	viper.BindEnv("repo_type")
@@ -59,6 +61,7 @@ func init() {
 	viper.BindEnv("repo_name")
 	viper.BindEnv("repo_database")
 	viper.BindEnv("repo_secret")
+	viper.BindEnv("repo_timeout")
 
 	viper.BindEnv("n_retries") // number of retries on each healthcheck
 	viper.BindEnv("log_level") // log level for the lambda
@@ -103,6 +106,7 @@ func Config() *LambdaConfig {
 					Role:      viper.GetString("snowflake_role"),
 					Warehouse: viper.GetString("snowflake_warehouse"),
 				},
+				ConnectionTimeout: viper.GetInt("repo_timeout"),
 			},
 			Sidecar: RepoConfig{
 				Host:                    viper.GetString("sidecar_host"),
@@ -118,6 +122,7 @@ func Config() *LambdaConfig {
 					Role:      viper.GetString("snowflake_role"),
 					Warehouse: viper.GetString("snowflake_warehouse"),
 				},
+				ConnectionTimeout: viper.GetInt("sidecar_timeout"),
 			},
 			StackName: viper.GetString("cf_stack_name"),
 		}

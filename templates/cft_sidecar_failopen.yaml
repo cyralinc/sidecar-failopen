@@ -7,6 +7,7 @@ Metadata:
         Parameters:
           - SidecarHost
           - SidecarPort
+          - SidecarConnectionTimeout
       - Label:
           default: Repository Configuration
         Parameters:
@@ -17,6 +18,7 @@ Metadata:
           - RepoHost
           - RepoPort
           - RepoDatabase
+          - RepoConnectionTimeout
           - ConnectionStringOptions
       - Label:
           default: Record set configuration
@@ -60,6 +62,11 @@ Parameters:
   SidecarPort:
     Type: String
     Description: "Port allocated on the sidecar for this repository."
+  SidecarConnectionTimeout:
+    Type: String
+    Default: "2"
+    AllowedPattern: "\\d+"
+    Description: Connection timeout for the sidecar in seconds.
 
   RepoType:
     Type: String
@@ -86,6 +93,11 @@ Parameters:
   RepoDatabase:
     Type: String
     Description: "The database on the repository that the health check will connect to."
+  RepoConnectionTimeout:
+    Type: String
+    Default: "2"
+    AllowedPattern: "\\d+"
+    Description: Connection timeout for the repo in seconds.
 
   VPC:
     Type: AWS::EC2::VPC::Id
@@ -330,12 +342,14 @@ Resources:
         Variables:
           FAIL_OPEN_SIDECAR_PORT: !Ref SidecarPort
           FAIL_OPEN_SIDECAR_HOST: !Ref SidecarHost
+          FAIL_OPEN_SIDECAR_TIMEOUT: !Ref SidecarConnectionTimeout
           FAIL_OPEN_CF_STACK_NAME: !Ref AWS::StackName
           FAIL_OPEN_REPO_TYPE: !Ref RepoType
           FAIL_OPEN_REPO_SECRET: !If [CreateRepoSecret, !Ref RepoSecret, !Ref RepoSecretArn]
           FAIL_OPEN_REPO_PORT: !Ref RepoPort
           FAIL_OPEN_REPO_DATABASE: !Ref RepoDatabase
           FAIL_OPEN_REPO_HOST: !Ref RepoHost
+          FAIL_OPEN_REPO_TIMEOUT: !Ref RepoConnectionTimeout
           FAIL_OPEN_N_RETRIES: !Sub "${NumberOfRetries}"
           FAIL_OPEN_LOG_LEVEL: !Ref LogLevel
 
@@ -412,13 +426,13 @@ Resources:
   SnowflakeNGINXProxyLoadBalancerCertificate:
     Condition: IsSnowflakeRepository
     Type: "AWS::CertificateManager::Certificate"
-    Properties: 
+    Properties:
       DomainName: !Ref RecordSetName
       DomainValidationOptions:
             - DomainName: !Ref RecordSetName
               HostedZoneId: !Ref HostedZoneID
       SubjectAlternativeNames: [!Ref SidecarHost]
-      ValidationMethod: DNS 
+      ValidationMethod: DNS
       Tags:
         - Key: "Stack"
           Value: !Ref "AWS::StackName"
@@ -491,9 +505,9 @@ Resources:
           if ngx.req.get_method() == \"POST\" then
               ngx.req.read_body()
               local data = ngx.req.get_body_data()
-          
+
               local content_encoding = ngx.req.get_headers()[\"Content-Encoding\"]
-          
+
               if content_encoding == \"gzip\" then
                   if data then
                       local zlib = require \"zlib\"
@@ -501,10 +515,10 @@ Resources:
                       data = stream(data);
                   end
               end
-          
+
               local cjson = require \"cjson\"
               local json_data = cjson.decode(data)
-          
+
               -- Rewrite account name in request.
               if (json_data.data.ACCOUNT_NAME)
               then
@@ -515,15 +529,15 @@ Resources:
                       account_name = part
                       break
                   end
-          
+
                   json_data.data.ACCOUNT_NAME = string.upper(account_name)
-          
+
                   -- Set account name in request body.
                   ngx.req.clear_header(\"content-length\")
                   ngx.req.clear_header(\"content-encoding\")
                   ngx.req.set_body_data(cjson.encode(json_data))
               end
-          
+
           end
           EOF`" > /usr/local/openresty/nginx/src/login_access.lua
 
