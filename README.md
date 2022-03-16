@@ -132,3 +132,8 @@ The repository for the lambda is open source, and can be forked and updated as n
 > - Does this tool support Snowflake repositories?
 
 Yes. All the information to get the fail-open to work with Snowflake repos can be found [here](./docs/snowflake.md).
+
+> - How do I add connection parameters to the repository?
+
+You can add them to the `ConnectionStringOptions` parameter on the CFT template. For example, to connect to a mongodb repository with a self
+signed certificate you can set the options to `ssl=true,tlsInsecure=true`, which will add these options to the connection string.
