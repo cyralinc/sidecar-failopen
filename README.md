@@ -32,6 +32,7 @@ Some limitations apply to the operation of the fail-open feature, as described b
 |-------------- |
 | Denodo        |
 | MariaDB       |
+| MongoDB       |
 | MySQL         |
 | Oracle        |
 | PostgreSQL    |
@@ -39,7 +40,7 @@ Some limitations apply to the operation of the fail-open feature, as described b
 | Snowflake\*   |
 | SQLServer     |
 
-\*Click [here for Snowflake support](./snowflake) and follow the instructions.
+\*Click [here for Snowflake support](./docs/snowflake.md) and follow the instructions.
 
 ## DNS CNAME
 
@@ -128,6 +129,11 @@ This may be due to the DNS TTL in your runtime. The JVM default DNS TTL is 60s, 
 
 The repository for the lambda is open source, and can be forked and updated as needed. You can publish it to your local AWS account and refer to your lambda store location when deploying the CloudFormation template.
 
-> - Does this support snowflake repositories?
+> - Does this tool support Snowflake repositories?
 
-At this time, snowflake specific repos have a separate fail open configuration that can be found within the [snowflake](./snowflake) directory in this repo.
+Yes. All the information to get the fail-open to work with Snowflake repos can be found [here](./docs/snowflake.md).
+
+> - How do I add connection parameters to the repository?
+
+You can add them to the `ConnectionStringOptions` parameter on the CFT template. For example, to connect to a mongodb repository with a self
+signed certificate you can set the options to `ssl=true,tlsInsecure=true`, which will add these options to the connection string.

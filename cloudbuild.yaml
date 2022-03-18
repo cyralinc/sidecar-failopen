@@ -63,30 +63,7 @@ steps:
     id: "unit-tests"
     waitFor: ["git-config"]
 
-  # Run security tests
-  - name: securego/gosec
-    args:
-      - -no-fail
-      - ./...
-    volumes:
-      - name: "go-modules"
-        path: /go
-    id: "security-tests"
-    waitFor: ["unit-tests"]
-
   # Run lint
-  - name: golangci/golangci-lint
-    args:
-      - golangci-lint
-      - run
-      - --issues-exit-code=0
-      - --timeout=5m
-    volumes:
-      - name: "go-modules"
-        path: /go
-    id: "run lint"
-    waitFor: ["unit-tests"]
-
   # Build repo failopen binary
   - name: golang:1.17
     entrypoint: "make"

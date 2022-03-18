@@ -52,7 +52,7 @@ func NewGenericSqlRepository(repoName, repoType, database, connStr string) (*Gen
 }
 
 func (repo *GenericSqlRepository) Ping(ctx context.Context) error {
-	logging.Debug("pinging repo")
+	logging.Debug("pinging repo %s", repo.repoName)
 	rows, err := repo.db.QueryContext(ctx, PingQuery)
 	if err != nil {
 		return err

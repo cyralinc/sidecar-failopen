@@ -15,11 +15,17 @@ import (
 	// oracle for oracle only
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/oracle"
 
+	// snowflake
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/snowflake"
+
 	// pg covers postgresql, denodo and redshift
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/postgresql"
 
 	// sqlserver
 	_ "github.com/cyralinc/sidecar-failopen/internal/repository/sqlserver"
+
+	// mongodb
+	_ "github.com/cyralinc/sidecar-failopen/internal/repository/mongodb"
 )
 
 func Run(ctx context.Context) error {

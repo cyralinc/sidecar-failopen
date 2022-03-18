@@ -9,17 +9,29 @@ import (
 	"github.com/spf13/viper"
 )
 
+type PostgreSQLConfig struct {
+	ConnectionStringOptions string
+}
+
+type SnowflakeConfig struct {
+	Account   string
+	Role      string
+	Warehouse string
+}
+
 // RepoConfig is the configuration for a repository, including
 // connection information and metadata.
 type RepoConfig struct {
-	Host            string
-	Port            int
-	User            string
-	Password        string
-	Database        string
-	RepoName        string
-	RepoType        string
-	PGStringOptions string
+	Host                    string
+	Port                    int
+	User                    string
+	Password                string
+	Database                string
+	RepoName                string
+	RepoType                string
+	ConnectionStringOptions string
+	SnowflakeConfig         SnowflakeConfig
+	ConnectionTimeout       int
 }
 
 // LambdaConfig is the configuration for the lambda in general. This
@@ -40,6 +52,7 @@ func init() {
 	// sidecar location configuration
 	viper.BindEnv("sidecar_port")
 	viper.BindEnv("sidecar_host")
+	viper.BindEnv("sidecar_timeout")
 
 	// repository configuration
 	viper.BindEnv("repo_type")
@@ -48,13 +61,19 @@ func init() {
 	viper.BindEnv("repo_name")
 	viper.BindEnv("repo_database")
 	viper.BindEnv("repo_secret")
+	viper.BindEnv("repo_timeout")
 
 	viper.BindEnv("n_retries") // number of retries on each healthcheck
 	viper.BindEnv("log_level") // log level for the lambda
 
 	viper.BindEnv("cf_stack_name") // name of the stack
 
-	viper.BindEnv("pg_conn_opts") // connection options for pg based repos
+	viper.BindEnv("connection_string_options") // connection options for pg based repos
+
+	// snowflake configuration
+	viper.BindEnv("snowflake_role")
+	viper.BindEnv("snowflake_account")
+	viper.BindEnv("snowflake_warehouse")
 }
 
 var c *LambdaConfig
@@ -73,24 +92,37 @@ func Config() *LambdaConfig {
 			NumberOfRetries: viper.GetInt("n_retries"),
 			LogLevel:        viper.GetString("log_level"),
 			Repo: RepoConfig{
-				Host:            viper.GetString("repo_host"),
-				Port:            viper.GetInt("repo_port"),
-				Database:        viper.GetString("repo_database"),
-				RepoType:        viper.GetString("repo_type"),
-				RepoName:        viper.GetString("repo_name"),
-				User:            sec.Username,
-				Password:        sec.Password,
-				PGStringOptions: viper.GetString("pg_conn_opts"),
+				Host:                    viper.GetString("repo_host"),
+				Port:                    viper.GetInt("repo_port"),
+				Database:                viper.GetString("repo_database"),
+				RepoType:                viper.GetString("repo_type"),
+				RepoName:                viper.GetString("repo_name"),
+				User:                    sec.Username,
+				Password:                sec.Password,
+				ConnectionStringOptions: viper.GetString("pg_conn_opts"),
+
+				SnowflakeConfig: SnowflakeConfig{
+					Account:   viper.GetString("snowflake_account"),
+					Role:      viper.GetString("snowflake_role"),
+					Warehouse: viper.GetString("snowflake_warehouse"),
+				},
+				ConnectionTimeout: viper.GetInt("repo_timeout"),
 			},
 			Sidecar: RepoConfig{
-				Host:            viper.GetString("sidecar_host"),
-				Port:            viper.GetInt("sidecar_port"),
-				Database:        viper.GetString("repo_database"),
-				RepoType:        viper.GetString("repo_type"),
-				RepoName:        viper.GetString("repo_name"),
-				User:            sec.Username,
-				Password:        sec.Password,
-				PGStringOptions: viper.GetString("pg_conn_opts"),
+				Host:                    viper.GetString("sidecar_host"),
+				Port:                    viper.GetInt("sidecar_port"),
+				Database:                viper.GetString("repo_database"),
+				RepoType:                viper.GetString("repo_type"),
+				RepoName:                viper.GetString("repo_name"),
+				User:                    sec.Username,
+				Password:                sec.Password,
+				ConnectionStringOptions: viper.GetString("connection_string_options"),
+				SnowflakeConfig: SnowflakeConfig{
+					Account:   viper.GetString("snowflake_account"),
+					Role:      viper.GetString("snowflake_role"),
+					Warehouse: viper.GetString("snowflake_warehouse"),
+				},
+				ConnectionTimeout: viper.GetInt("sidecar_timeout"),
 			},
 			StackName: viper.GetString("cf_stack_name"),
 		}
